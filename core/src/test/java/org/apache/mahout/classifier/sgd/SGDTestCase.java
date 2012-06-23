@@ -35,6 +35,13 @@ import java.util.Map;
 import java.util.Random;
 
 public abstract class SGDTestCase extends MahoutTestCase {
+
+    protected Matrix input;
+
+    Matrix getInput() {
+        return input;
+    }
+
     /**
      * Permute the integers from 0 ... max-1
      *

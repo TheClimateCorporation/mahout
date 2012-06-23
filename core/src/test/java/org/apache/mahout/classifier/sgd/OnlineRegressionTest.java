@@ -141,12 +141,12 @@ public final class OnlineRegressionTest extends OnlineRegressionBaseTest {
         // for this example, but should generally be < 1
         // --passes 1 --rate 50 --lambda 0.001 --input sgd-y.csv --features 21 --output model --noBias
         //   --target y --categories 2 --predictors  V2 V3 V4 V5 V6 V7 --types n
-        OnlineRegression lr = new OnlineRegression(4, new L1())
-                .lambda(1 * 1.0e-3)
+        OnlineRegression regression = new OnlineRegression(4, new L1())
+                .lambda(1 * 1.0e-10)
                 .learningRate(0.1);
 
-        train(getInput(), target, lr);
-        test(getInput(), target, lr, 0.05, 0.3);
+        train(getInput(), target, regression);
+        test(getInput(), target, regression, 0.05, 0.3);
     }
 
 }

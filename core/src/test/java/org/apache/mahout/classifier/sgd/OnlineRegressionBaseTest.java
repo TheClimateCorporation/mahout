@@ -43,21 +43,13 @@ import java.util.Random;
 
 public abstract class OnlineRegressionBaseTest extends SGDTestCase {
 
-    private Matrix input;
-
-    Matrix getInput() {
-        return input;
-    }
-
     Vector readStandardData() throws IOException {
-        // TODO update documentation
-        // 500 test samples.  First column is constant.  Second and third are normally distributed from
-        // either N([2,2], 1) (rows 0...29) or N([-2,-2], 1) (rows 30...59).  The first 30 rows have a
-        // target variable of 0, the last 30 a target of 1.  The remaining columns are are random noise.
+        // 500 test samples.  First column is constant value of 1.0.  Second is normally distributed from
+        // N(0, 0.1). The remaining columns are normally distributed from N(0,1).
         input = readCsv("sgd-regression.csv");
 
         // regenerate the target variable
-        Vector target = new DenseVector(500);
+        Vector target = new DenseVector(input.numRows());
         target.assign(1);
         return target;
     }
@@ -67,16 +59,16 @@ public abstract class OnlineRegressionBaseTest extends SGDTestCase {
         Random gen = RandomUtils.getRandom();
 
         // train on samples in random order (but only one pass)
-        for (int row : permute(gen, 500)) {
+        for (int row : permute(gen, input.numRows())) {
             regression.train((int) target.get(row), input.viewRow(row));
         }
         regression.close();
     }
 
-    static void test(Matrix input, Vector target, AbstractVectorRegression lr,
+    static void test(Matrix input, Vector target, OnlineRegression regression,
                      double expected_mean_error, double expected_absolute_error) {
         // now test the accuracy
-        Vector tmp = lr.predict(input);
+        Vector tmp = regression.predict(input);
         // mean(abs(tmp - target))
         double meanAbsoluteError = tmp.minus(target).aggregate(Functions.PLUS, Functions.ABS) / input.numRows();
 
@@ -84,14 +76,19 @@ public abstract class OnlineRegressionBaseTest extends SGDTestCase {
         double maxAbsoluteError = tmp.minus(target).aggregate(Functions.MAX, Functions.ABS);
 
         System.out.printf("mAE = %.4f, maxAE = %.4f\n", meanAbsoluteError, maxAbsoluteError);
-        assertEquals(0, meanAbsoluteError , expected_mean_error);
+        assertEquals(0, meanAbsoluteError, expected_mean_error);
         assertEquals(0, maxAbsoluteError, expected_absolute_error);
 
+        // expected solution is <0.5,0.5,0.0,0.0>
+        Vector beta = regression.getBeta();
+        assertEquals(beta.get(0), 0.5, 1.0e-2);
+        assertEquals(beta.get(1),0.5,1.0e-2);
+        assertEquals(beta.get(2),0.0,1.0e-1);
+        assertEquals(beta.get(3),0.0,1.0e-1);
+
         // convenience methods should give the same results
-        Vector v = lr.predict(input);
+        Vector v = regression.predict(input);
         assertEquals(0, v.minus(tmp).norm(1), 1.0e-5);
-        v = lr.predict(input);
-        assertEquals(0, v.minus(tmp).norm(1), 1.0e-4);
     }
 
 }
