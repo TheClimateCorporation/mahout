@@ -159,6 +159,7 @@ public class OnlineLinearPredictor extends AbstractOnlineLinearPredictor impleme
       perTermAnnealingOffset = in.readInt();
       beta = VectorWritable.readVector(in);
       prior = PolymorphicWritable.read(in, PriorFunction.class);
+      strategy = new SGDStrategy(prior);
 
       updateCounts = VectorWritable.readVector(in);
       updateSteps = VectorWritable.readVector(in);

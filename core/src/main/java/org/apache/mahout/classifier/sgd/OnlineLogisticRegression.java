@@ -161,7 +161,7 @@ public class OnlineLogisticRegression extends AbstractOnlineLogisticRegression i
       numCategories = in.readInt();
       beta = MatrixWritable.readMatrix(in);
       prior = PolymorphicWritable.read(in, PriorFunction.class);
-
+      strategy = new SGDStrategy(prior);
       updateCounts = VectorWritable.readVector(in);
       updateSteps = VectorWritable.readVector(in);
     } else {
