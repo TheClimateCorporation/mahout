@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.mahout.classifier;
+package org.apache.mahout.regression;
 
 import org.apache.mahout.math.Vector;
 
@@ -24,7 +24,7 @@ import java.io.Closeable;
 /**
  * The simplest interface for online learning algorithms.
  */
-public interface OnlineRegressionLearner extends Closeable {
+public interface OnlineLinearPredictorLearner extends Closeable {
     /**
      * Updates the model using a particular target variable value and a feature vector.
      * <p/>
@@ -37,8 +37,7 @@ public interface OnlineRegressionLearner extends Closeable {
      * If re-ordering is necessary, then using the alternative API which allows a tracking key to be
      * added to the training example can be used.
      *
-     * @param actual   The value of the target variable.  This value should be in the half-open
-     *                 interval [0..n) where n is the number of target categories.
+     * @param actual   The value of the target variable.
      * @param instance The feature vector for this example.
      */
     void train(double actual, Vector instance);
@@ -57,10 +56,9 @@ public interface OnlineRegressionLearner extends Closeable {
      * the original data record in a data file.
      *
      * @param trackingKey The tracking key for this training example.
-     * @param groupKey     An optional value that allows examples to be grouped in the computation of
+     * @param groupKey    An optional value that allows examples to be grouped in the computation of
      * the update to the model.
-     * @param actual   The value of the target variable.  This value should be in the half-open
-     *                 interval [0..n) where n is the number of target categories.
+     * @param actual   The value of the target variable.
      * @param instance The feature vector for this example.
      */
     void train(long trackingKey, String groupKey, double actual, Vector instance);
@@ -79,17 +77,16 @@ public interface OnlineRegressionLearner extends Closeable {
      * the original data record in a data file.
      *
      * @param trackingKey The tracking key for this training example.
-     * @param actual   The value of the target variable.  This value should be in the half-open
-     *                 interval [0..n) where n is the number of target categories.
+     * @param actual   The value of the target variable.
      * @param instance The feature vector for this example.
      */
     void train(long trackingKey, double actual, Vector instance);
 
     /**
-     * Prepares the classifier for classification and deallocates any temporary data structures.
+     * Prepares the linear predictor for prediction and deallocates any temporary data structures.
      *
-     * An online classifier should be able to accept more training after being closed, but
-     * closing the classifier may make classification more efficient.
+     * An online linear predictor should be able to accept more training after being closed, but
+     * closing the linear predictor may make prediction more efficient.
      */
     @Override
     void close();

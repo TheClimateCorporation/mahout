@@ -15,11 +15,12 @@
  * limitations under the License.
  */
 
-package org.apache.mahout.classifier.sgd;
+package org.apache.mahout.regression.sgd;
 
 import com.google.common.base.Preconditions;
-import org.apache.mahout.classifier.AbstractVectorRegression;
-import org.apache.mahout.classifier.OnlineRegressionLearner;
+import org.apache.mahout.regression.AbstractVectorLinearPredictor;
+import org.apache.mahout.regression.OnlineLinearPredictorLearner;
+import org.apache.mahout.classifier.sgd.PriorFunction;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.function.DoubleFunction;
@@ -28,17 +29,14 @@ import org.apache.mahout.math.function.Functions;
 import java.util.Iterator;
 
 /**
- * TODO: update this documentation
- * Generic definition of a 1 of n logistic regression classifier that returns probabilities in
- * response to a feature vector.  This classifier uses 1 of n-1 coding where the 0-th category
- * is not stored explicitly.
+ * Generic definition of a linear predictor function.
  * <p/>
- * Provides the SGD based algorithm for learning a logistic regression, but omits all
+ * Provides the SGD based algorithm for learning a regression solution, but omits all
  * annealing of learning rates.  Any extension of this abstract class must define the overall
  * and per-term annealing for themselves.
  */
-public abstract class AbstractOnlineRegression extends AbstractVectorRegression implements OnlineRegressionLearner {
-    // coefficients for the classification.  This is a dense matrix
+public abstract class AbstractOnlineLinearPredictor extends AbstractVectorLinearPredictor implements OnlineLinearPredictorLearner {
+    // coefficients for the prediction.  This is a dense Vector.
     protected Vector beta;
 
     protected int step;
@@ -54,11 +52,11 @@ public abstract class AbstractOnlineRegression extends AbstractVectorRegression 
     private double lambda = 1.0e-5;
     protected PriorFunction prior;
 
-    // can we ignore any further regularization when doing classification?
+    // can we ignore any further regularization when doing prediction?
     private boolean sealed;
 
     // by default we don't do any fancy training
-    private RegressionGradient gradient = new DefaultRegressionGradient();
+    private LinearPredictorGradient gradient = new DefaultLinerPredictorGradient();
 
     /**
      * Chainable configuration option.
@@ -66,45 +64,9 @@ public abstract class AbstractOnlineRegression extends AbstractVectorRegression 
      * @param lambda New value of lambda, the weighting factor for the prior distribution.
      * @return This, so other configurations can be chained.
      */
-    public AbstractOnlineRegression lambda(double lambda) {
+    public AbstractOnlineLinearPredictor lambda(double lambda) {
         this.lambda = lambda;
         return this;
-    }
-
-    /**
-     * Computes the inverse link function, by default the logistic link function.
-     *
-     * @param v The output of the linear combination in a GLM.  Note that the value
-     *          of v is disturbed.
-     * @return A version of v with the link function applied.
-     */
-    public Vector link(Vector v) {
-        double max = v.maxValue();
-        if (max >= 40) {
-            // if max > 40, we subtract the large offset first
-            // the size of the max means that 1+sum(exp(v)) = sum(exp(v)) to within round-off
-            v.assign(Functions.minus(max)).assign(Functions.EXP);
-            return v.divide(v.norm(1));
-        } else {
-            v.assign(Functions.EXP);
-            return v.divide(1 + v.norm(1));
-        }
-    }
-
-    /**
-     * Computes the binomial logistic inverse link function.
-     *
-     * @param r The value to transform.
-     * @return The logit of r.
-     */
-    public double link(double r) {
-        if (r < 0.0) {
-            double s = Math.exp(r);
-            return s / (1.0 + s);
-        } else {
-            double s = Math.exp(-r);
-            return 1.0 / (1.0 + s);
-        }
     }
 
     public double linearCombination(Vector instance) {
@@ -112,17 +74,16 @@ public abstract class AbstractOnlineRegression extends AbstractVectorRegression 
     }
 
     /**
-     * Returns a single scalar probability in the case where we have two categories.  Using this
-     * method avoids an extra vector allocation as opposed to calling classify() or an extra two
-     * vector allocations relative to classifyFull().
+     * Returns a single scalar value of the prediction for instance.
      *
      * @param instance The vector of features to be classified.
-     * @return The probability of the first of two categories.
-     * @throws IllegalArgumentException If the classifier doesn't have two categories.
+     * @return The linear prediction.
+     * @throws IllegalArgumentException If the the instance dimensionality does not match the coefficient dimensionality.
      */
     @Override
     public double predict(Vector instance) {
-        Preconditions.checkArgument(instance.size() == beta.size(), "Can only call predict with instance of same dimension as beta");
+        Preconditions.checkArgument(instance.size() == beta.size(),
+                "Can only call predict with instance of same dimension as beta");
 
         // apply pending regularization to whichever coefficients matter
         regularize(instance);
@@ -208,7 +169,7 @@ public abstract class AbstractOnlineRegression extends AbstractVectorRegression 
         this.prior = prior;
     }
 
-    public void setGradient(RegressionGradient gradient) {
+    public void setGradient(LinearPredictorGradient gradient) {
         this.gradient = gradient;
     }
 
@@ -260,7 +221,7 @@ public abstract class AbstractOnlineRegression extends AbstractVectorRegression 
         }
     }
 
-    public void copyFrom(AbstractOnlineRegression other) {
+    public void copyFrom(AbstractOnlineLinearPredictor other) {
         beta.assign(other.beta);
 
         step = other.step;

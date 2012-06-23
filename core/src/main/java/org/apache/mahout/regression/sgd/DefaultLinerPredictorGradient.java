@@ -1,5 +1,3 @@
-
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -17,31 +15,30 @@
  * limitations under the License.
  */
 
-package org.apache.mahout.classifier.sgd;
+package org.apache.mahout.regression.sgd;
 
-import org.apache.mahout.classifier.AbstractVectorClassifier;
-import org.apache.mahout.classifier.AbstractVectorRegression;
+import org.apache.mahout.regression.AbstractVectorLinearPredictor;
 import org.apache.mahout.math.Vector;
-import org.apache.mahout.math.function.Functions;
 
 /**
  * Implements the basic regression training law which applies an L2 loss.
  */
-public class DefaultRegressionGradient implements RegressionGradient {
+public class DefaultLinerPredictorGradient implements LinearPredictorGradient {
     /**
-     * Provides a default gradient computation useful for logistic regression.
+     * Provides a default gradient computation useful for least squares regression.
      *
-     * @param groupKey     A grouping key to allow per-something AUC loss to be used for training.
-     * @param actual       The target variable value.
-     * @param instance     The current feature vector to use for gradient computation
-     * @param classifier   The classifier that can compute scores
+     * @param groupKey    A grouping key to allow per-something loss to be used for training.
+     * @param actual      The target variable value.
+     * @param instance    The current feature vector to use for gradient computation.
+     * @param predictor   The predictor that can compute scores
      * @return  The gradient to be applied to beta
      */
     @Override
-    public final double apply(String groupKey, double actual, Vector instance, AbstractVectorRegression classifier) {
+    public final double apply(String groupKey, double actual, Vector instance, AbstractVectorLinearPredictor predictor) {
         // what does the current model say?
-        double v = classifier.predict(instance);
+        double v = predictor.predict(instance);
 
+        // the 2.0 is not strictly necessary, but included to match the standard form of the L2 gradient
         return 2.0*(actual-v);
     }
 }

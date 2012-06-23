@@ -15,9 +15,11 @@
  * limitations under the License.
  */
 
-package org.apache.mahout.classifier.sgd;
+package org.apache.mahout.regression.sgd;
 
 import org.apache.hadoop.io.Writable;
+import org.apache.mahout.classifier.sgd.PolymorphicWritable;
+import org.apache.mahout.classifier.sgd.PriorFunction;
 import org.apache.mahout.math.*;
 
 import java.io.DataInput;
@@ -28,7 +30,7 @@ import java.io.IOException;
  * Extends the basic on-line logistic regression learner with a specific set of learning
  * rate annealing schedules.
  */
-public class OnlineRegression extends AbstractOnlineRegression implements Writable {
+public class OnlineLinearPredictor extends AbstractOnlineLinearPredictor implements Writable {
     public static final int WRITABLE_VERSION = 1;
 
     // these next two control decayFactor^steps exponential type of annealing
@@ -44,11 +46,11 @@ public class OnlineRegression extends AbstractOnlineRegression implements Writab
     // controls how per term annealing works
     private int perTermAnnealingOffset = 20;
 
-    public OnlineRegression() {
+    public OnlineLinearPredictor() {
         // private constructor available for serialization, but not normal use
     }
 
-    public OnlineRegression(int numFeatures, PriorFunction prior) {
+    public OnlineLinearPredictor(int numFeatures, PriorFunction prior) {
         this.prior = prior;
 
         updateSteps = new DenseVector(numFeatures);
@@ -62,13 +64,13 @@ public class OnlineRegression extends AbstractOnlineRegression implements Writab
      * @param alpha New value of decayFactor, the exponential decay rate for the learning rate.
      * @return This, so other configurations can be chained.
      */
-    public OnlineRegression alpha(double alpha) {
+    public OnlineLinearPredictor alpha(double alpha) {
         this.decayFactor = alpha;
         return this;
     }
 
     @Override
-    public OnlineRegression lambda(double lambda) {
+    public OnlineLinearPredictor lambda(double lambda) {
         // we only over-ride this to provide a more restrictive return type
         super.lambda(lambda);
         return this;
@@ -80,17 +82,17 @@ public class OnlineRegression extends AbstractOnlineRegression implements Writab
      * @param learningRate New value of initial learning rate.
      * @return This, so other configurations can be chained.
      */
-    public OnlineRegression learningRate(double learningRate) {
+    public OnlineLinearPredictor learningRate(double learningRate) {
         this.mu0 = learningRate;
         return this;
     }
 
-    public OnlineRegression stepOffset(int stepOffset) {
+    public OnlineLinearPredictor stepOffset(int stepOffset) {
         this.stepOffset = stepOffset;
         return this;
     }
 
-    public OnlineRegression decayExponent(double decayExponent) {
+    public OnlineLinearPredictor decayExponent(double decayExponent) {
         if (decayExponent > 0) {
             decayExponent = -decayExponent;
         }
@@ -109,7 +111,7 @@ public class OnlineRegression extends AbstractOnlineRegression implements Writab
         return mu0 * Math.pow(decayFactor, getStep()) * Math.pow(getStep() + stepOffset, forgettingExponent);
     }
 
-    public void copyFrom(OnlineRegression other) {
+    public void copyFrom(OnlineLinearPredictor other) {
         super.copyFrom(other);
         mu0 = other.mu0;
         decayFactor = other.decayFactor;
@@ -120,9 +122,9 @@ public class OnlineRegression extends AbstractOnlineRegression implements Writab
         perTermAnnealingOffset = other.perTermAnnealingOffset;
     }
 
-    public OnlineRegression copy() {
+    public OnlineLinearPredictor copy() {
         close();
-        OnlineRegression r = new OnlineRegression(beta.size(), prior);
+        OnlineLinearPredictor r = new OnlineLinearPredictor(beta.size(), prior);
         r.copyFrom(this);
         return r;
     }

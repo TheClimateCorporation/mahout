@@ -15,15 +15,14 @@
  * limitations under the License.
  */
 
-package org.apache.mahout.classifier.sgd;
+package org.apache.mahout.regression.sgd;
 
-import org.apache.mahout.classifier.AbstractVectorClassifier;
-import org.apache.mahout.classifier.AbstractVectorRegression;
+import org.apache.mahout.regression.AbstractVectorLinearPredictor;
 import org.apache.mahout.math.Vector;
 
 /**
  * Provides the ability to inject a gradient into the SGD regression.
  */
-public interface RegressionGradient {
-    double apply(String groupKey, double actual, Vector instance, AbstractVectorRegression classifier);
+public interface LinearPredictorGradient {
+    double apply(String groupKey, double actual, Vector instance, AbstractVectorLinearPredictor classifier);
 }

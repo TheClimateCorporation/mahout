@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.mahout.classifier;
+package org.apache.mahout.regression;
 
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Matrix;
@@ -26,29 +26,24 @@ import org.apache.mahout.math.Vector;
  * as an abstract class so that it can implement a number of handy convenience methods
  * related to regression of vectors.
  */
-public abstract class AbstractVectorRegression {
+public abstract class AbstractVectorLinearPredictor {
     // ------ These are all that are necessary to define a vector classifier.
 
     /**
-     * TODO: update
-     * Classify a vector returning a vector of numCategories-1 scores.  It is assumed that
-     * the score for the missing category is one minus the sum of the scores that are returned.
+     * Predict value of a vector returning a predicted value.
      *
-     * Note that the missing score is the 0-th score.
      * @param instance  A feature vector to be classified.
-     * @return  A vector of probabilities in 1 of n-1 encoding.
+     * @return  A double of the predicted value.
      */
     public abstract double predict(Vector instance);
 
     // ------- From here on, we have convenience methods that provide an easier API to use.
 
     /**
-     * Returns n-1 probabilities, one for each category but the last, for each row of a matrix. The
-     * probability of the missing 0-th category is 1 - rowSum(this result).
      *
-     * @param data The matrix whose rows are vectors to classify
-     * @return A matrix of scores, one row per row of the input matrix, one column for each but the
-     *         last category.
+     * @param data The matrix whose rows are vectors to predict
+     * @return A vector of predictions, one value per row of the input matrix.
+     *
      */
     public Vector predict(Matrix data) {
         Vector r = new DenseVector(data.numRows());
@@ -57,6 +52,5 @@ public abstract class AbstractVectorRegression {
         }
         return r;
     }
-
 
 }

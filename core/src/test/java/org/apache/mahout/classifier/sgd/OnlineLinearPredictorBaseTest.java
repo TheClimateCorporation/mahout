@@ -17,31 +17,17 @@
 
 package org.apache.mahout.classifier.sgd;
 
-import com.google.common.base.CharMatcher;
-import com.google.common.base.Charsets;
-import com.google.common.base.Splitter;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.io.CharStreams;
-import com.google.common.io.Resources;
-import org.apache.mahout.classifier.AbstractVectorClassifier;
-import org.apache.mahout.classifier.AbstractVectorRegression;
-import org.apache.mahout.classifier.OnlineLearner;
-import org.apache.mahout.common.MahoutTestCase;
 import org.apache.mahout.common.RandomUtils;
-import org.apache.mahout.math.DenseMatrix;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Matrix;
 import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.function.Functions;
+import org.apache.mahout.regression.sgd.OnlineLinearPredictor;
 
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.List;
-import java.util.Map;
 import java.util.Random;
 
-public abstract class OnlineRegressionBaseTest extends SGDTestCase {
+public abstract class OnlineLinearPredictorBaseTest extends SGDTestCase {
 
     Vector readStandardData() throws IOException {
         // 500 test samples.  First column is constant value of 1.0.  Second is normally distributed from
@@ -54,7 +40,7 @@ public abstract class OnlineRegressionBaseTest extends SGDTestCase {
         return target;
     }
 
-    static void train(Matrix input, Vector target, OnlineRegression regression) {
+    static void train(Matrix input, Vector target, OnlineLinearPredictor regression) {
         RandomUtils.useTestSeed();
         Random gen = RandomUtils.getRandom();
 
@@ -65,7 +51,7 @@ public abstract class OnlineRegressionBaseTest extends SGDTestCase {
         regression.close();
     }
 
-    static void test(Matrix input, Vector target, OnlineRegression regression,
+    static void test(Matrix input, Vector target, OnlineLinearPredictor regression,
                      double expected_mean_error, double expected_absolute_error) {
         // now test the accuracy
         Vector tmp = regression.predict(input);

@@ -17,16 +17,13 @@
 
 package org.apache.mahout.classifier.sgd;
 
-import org.apache.mahout.common.RandomUtils;
-import org.apache.mahout.math.DenseVector;
-import org.apache.mahout.math.Matrix;
 import org.apache.mahout.math.Vector;
+import org.apache.mahout.regression.sgd.OnlineLinearPredictor;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.Random;
 
-public final class OnlineRegressionTest extends OnlineRegressionBaseTest {
+public final class OnlineLinearPredictorTest extends OnlineLinearPredictorBaseTest {
 
     /**
      * The CrossFoldLearner is probably the best learner to use for new applications.
@@ -36,7 +33,7 @@ public final class OnlineRegressionTest extends OnlineRegressionBaseTest {
 //    public void crossValidation() throws IOException {
 //        Vector target = readStandardData();
 //
-//        OnlineRegression lr = new OnlineRegression(2, 8, new L1())
+//        OnlineLinearPredictor lr = new OnlineLinearPredictor(2, 8, new L1())
 //                .lambda(1 * 1.0e-3)
 //                .learningRate(50);
 //
@@ -141,7 +138,7 @@ public final class OnlineRegressionTest extends OnlineRegressionBaseTest {
         // for this example, but should generally be < 1
         // --passes 1 --rate 50 --lambda 0.001 --input sgd-y.csv --features 21 --output model --noBias
         //   --target y --categories 2 --predictors  V2 V3 V4 V5 V6 V7 --types n
-        OnlineRegression regression = new OnlineRegression(4, new L1())
+        OnlineLinearPredictor regression = new OnlineLinearPredictor(4, new L1())
                 .lambda(1 * 1.0e-10)
                 .learningRate(0.1);
 
