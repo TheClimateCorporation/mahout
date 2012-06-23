@@ -18,13 +18,13 @@
 package org.apache.mahout.classifier.sgd;
 
 public interface SGDLearner {
-    int getStep();
+  int getStep();
 
-    double getLambda();
+  double getLambda();
 
-    double perTermLearningRate(int j);
+  double perTermLearningRate(int j);
 
-    double currentLearningRate();
+  double currentLearningRate();
 
-    void nextStep();
+  void nextStep();
 }

@@ -27,30 +27,28 @@ import org.apache.mahout.math.Vector;
  * related to regression of vectors.
  */
 public abstract class AbstractVectorLinearPredictor {
-    // ------ These are all that are necessary to define a vector classifier.
+  // ------ These are all that are necessary to define a vector classifier.
 
-    /**
-     * Predict value of a vector returning a predicted value.
-     *
-     * @param instance  A feature vector to be classified.
-     * @return  A double of the predicted value.
-     */
-    public abstract double predict(Vector instance);
+  /**
+   * Predict value of a vector returning a predicted value.
+   *
+   * @param instance A feature vector to be classified.
+   * @return A double of the predicted value.
+   */
+  public abstract double predict(Vector instance);
 
-    // ------- From here on, we have convenience methods that provide an easier API to use.
+  // ------- From here on, we have convenience methods that provide an easier API to use.
 
-    /**
-     *
-     * @param data The matrix whose rows are vectors to predict
-     * @return A vector of predictions, one value per row of the input matrix.
-     *
-     */
-    public Vector predict(Matrix data) {
-        Vector r = new DenseVector(data.numRows());
-        for (int row = 0; row < data.numRows(); row++) {
-            r.set(row, predict(data.viewRow(row)));
-        }
-        return r;
+  /**
+   * @param data The matrix whose rows are vectors to predict
+   * @return A vector of predictions, one value per row of the input matrix.
+   */
+  public Vector predict(Matrix data) {
+    Vector r = new DenseVector(data.numRows());
+    for (int row = 0; row < data.numRows(); row++) {
+      r.set(row, predict(data.viewRow(row)));
     }
+    return r;
+  }
 
 }

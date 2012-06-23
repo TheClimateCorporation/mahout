@@ -24,5 +24,5 @@ import org.apache.mahout.math.Vector;
  * Provides the ability to inject a gradient into the SGD regression.
  */
 public interface LinearPredictorGradient {
-    double apply(String groupKey, double actual, Vector instance, AbstractVectorLinearPredictor classifier);
+  double apply(String groupKey, double actual, Vector instance, AbstractVectorLinearPredictor classifier);
 }

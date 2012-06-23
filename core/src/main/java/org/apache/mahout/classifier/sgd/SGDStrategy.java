@@ -23,45 +23,45 @@ import java.util.Iterator;
 
 public class SGDStrategy {
 
-    private PriorFunction prior;
+  private PriorFunction prior;
 
-    public SGDStrategy(PriorFunction prior) {
-        this.prior = prior;
+  public SGDStrategy(PriorFunction prior) {
+    this.prior = prior;
+  }
+
+  public void applyPrior(SGDLearner learner, Vector updateSteps, Vector instance, Vector beta) {
+    Iterator<Vector.Element> nonZeros = instance.iterateNonZero();
+    while (nonZeros.hasNext()) {
+      Vector.Element updateLocation = nonZeros.next();
+      int j = updateLocation.index();
+      double missingUpdates = learner.getStep() - updateSteps.get(j);
+      if (missingUpdates > 0) {
+        double rate = learner.getLambda() * learner.currentLearningRate() * learner.perTermLearningRate(j);
+        double newValue = prior.age(beta.get(j), missingUpdates, rate);
+        beta.set(j, newValue);
+        updateSteps.set(j, learner.getStep());
+      }
     }
+  }
 
-    public void applyPrior(SGDLearner learner, Vector updateSteps, Vector instance, Vector beta) {
-        Iterator<Vector.Element> nonZeros = instance.iterateNonZero();
-        while (nonZeros.hasNext()) {
-            Vector.Element updateLocation = nonZeros.next();
-            int j = updateLocation.index();
-            double missingUpdates = learner.getStep() - updateSteps.get(j);
-            if (missingUpdates > 0) {
-                double rate = learner.getLambda() * learner.currentLearningRate() * learner.perTermLearningRate(j);
-                double newValue = prior.age(beta.get(j), missingUpdates, rate);
-                beta.set(j, newValue);
-                updateSteps.set(j, learner.getStep());
-            }
-        }
+  public void applyGradient(SGDLearner learner, Vector instance, Vector beta, double gradientBase, Vector updateSteps, Vector updateCounts) {
+    // apply the gradientBase to beta
+    Iterator<Vector.Element> nonZeros = instance.iterateNonZero();
+    while (nonZeros.hasNext()) {
+      Vector.Element updateLocation = nonZeros.next();
+      int j = updateLocation.index();
+
+      double newValue = beta.getQuick(j) + gradientBase * learner.currentLearningRate() * learner.perTermLearningRate(j) * instance.get(j);
+      beta.setQuick(j, newValue);
     }
-
-    public void applyGradient(SGDLearner learner, Vector instance, Vector beta, double gradientBase, Vector updateSteps, Vector updateCounts) {
-        // apply the gradientBase to beta
-        Iterator<Vector.Element> nonZeros = instance.iterateNonZero();
-        while (nonZeros.hasNext()) {
-            Vector.Element updateLocation = nonZeros.next();
-            int j = updateLocation.index();
-
-            double newValue = beta.getQuick(j) + gradientBase * learner.currentLearningRate() * learner.perTermLearningRate(j) * instance.get(j);
-            beta.setQuick(j, newValue);
-        }
-        // remember that these elements got updated
-        Iterator<Vector.Element> i = instance.iterateNonZero();
-        while (i.hasNext()) {
-            Vector.Element element = i.next();
-            int j = element.index();
-            updateSteps.setQuick(j, learner.getStep());
-            updateCounts.setQuick(j, updateCounts.getQuick(j) + 1);
-        }
-        learner.nextStep();
+    // remember that these elements got updated
+    Iterator<Vector.Element> i = instance.iterateNonZero();
+    while (i.hasNext()) {
+      Vector.Element element = i.next();
+      int j = element.index();
+      updateSteps.setQuick(j, learner.getStep());
+      updateCounts.setQuick(j, updateCounts.getQuick(j) + 1);
     }
+    learner.nextStep();
+  }
 }

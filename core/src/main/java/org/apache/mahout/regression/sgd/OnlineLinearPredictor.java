@@ -32,139 +32,139 @@ import java.io.IOException;
  * rate annealing schedules.
  */
 public class OnlineLinearPredictor extends AbstractOnlineLinearPredictor implements Writable {
-    public static final int WRITABLE_VERSION = 1;
+  public static final int WRITABLE_VERSION = 1;
 
-    // these next two control decayFactor^steps exponential type of annealing
-    // learning rate and decay factor
-    private double mu0 = 1;
-    private double decayFactor = 1 - 1.0e-3;
+  // these next two control decayFactor^steps exponential type of annealing
+  // learning rate and decay factor
+  private double mu0 = 1;
+  private double decayFactor = 1 - 1.0e-3;
 
-    // these next two control 1/steps^forget type annealing
-    private int stepOffset = 10;
-    // -1 equals even weighting of all examples, 0 means only use exponential annealing
-    private double forgettingExponent = -0.5;
+  // these next two control 1/steps^forget type annealing
+  private int stepOffset = 10;
+  // -1 equals even weighting of all examples, 0 means only use exponential annealing
+  private double forgettingExponent = -0.5;
 
-    // controls how per term annealing works
-    private int perTermAnnealingOffset = 20;
+  // controls how per term annealing works
+  private int perTermAnnealingOffset = 20;
 
-    public OnlineLinearPredictor() {
-        // private constructor available for serialization, but not normal use
+  public OnlineLinearPredictor() {
+    // private constructor available for serialization, but not normal use
+  }
+
+  public OnlineLinearPredictor(int numFeatures, PriorFunction prior) {
+    this.prior = prior;
+    this.strategy = new SGDStrategy(prior);
+
+    updateSteps = new DenseVector(numFeatures);
+    updateCounts = new DenseVector(numFeatures).assign(perTermAnnealingOffset);
+    beta = new DenseVector(numFeatures);
+  }
+
+  /**
+   * Chainable configuration option.
+   *
+   * @param alpha New value of decayFactor, the exponential decay rate for the learning rate.
+   * @return This, so other configurations can be chained.
+   */
+  public OnlineLinearPredictor alpha(double alpha) {
+    this.decayFactor = alpha;
+    return this;
+  }
+
+  @Override
+  public OnlineLinearPredictor lambda(double lambda) {
+    // we only over-ride this to provide a more restrictive return type
+    super.lambda(lambda);
+    return this;
+  }
+
+  /**
+   * Chainable configuration option.
+   *
+   * @param learningRate New value of initial learning rate.
+   * @return This, so other configurations can be chained.
+   */
+  public OnlineLinearPredictor learningRate(double learningRate) {
+    this.mu0 = learningRate;
+    return this;
+  }
+
+  public OnlineLinearPredictor stepOffset(int stepOffset) {
+    this.stepOffset = stepOffset;
+    return this;
+  }
+
+  public OnlineLinearPredictor decayExponent(double decayExponent) {
+    if (decayExponent > 0) {
+      decayExponent = -decayExponent;
     }
+    this.forgettingExponent = decayExponent;
+    return this;
+  }
 
-    public OnlineLinearPredictor(int numFeatures, PriorFunction prior) {
-        this.prior = prior;
-        this.strategy = new SGDStrategy(prior);
 
-        updateSteps = new DenseVector(numFeatures);
-        updateCounts = new DenseVector(numFeatures).assign(perTermAnnealingOffset);
-        beta = new DenseVector(numFeatures);
+  @Override
+  public double perTermLearningRate(int j) {
+    return Math.sqrt(perTermAnnealingOffset / updateCounts.get(j));
+  }
+
+  @Override
+  public double currentLearningRate() {
+    return mu0 * Math.pow(decayFactor, getStep()) * Math.pow(getStep() + stepOffset, forgettingExponent);
+  }
+
+  public void copyFrom(OnlineLinearPredictor other) {
+    super.copyFrom(other);
+    mu0 = other.mu0;
+    decayFactor = other.decayFactor;
+    strategy = other.strategy;
+
+    stepOffset = other.stepOffset;
+    forgettingExponent = other.forgettingExponent;
+
+    perTermAnnealingOffset = other.perTermAnnealingOffset;
+  }
+
+  public OnlineLinearPredictor copy() {
+    close();
+    OnlineLinearPredictor r = new OnlineLinearPredictor(beta.size(), prior);
+    r.copyFrom(this);
+    return r;
+  }
+
+  @Override
+  public void write(DataOutput out) throws IOException {
+    out.writeInt(WRITABLE_VERSION);
+    out.writeDouble(mu0);
+    out.writeDouble(decayFactor);
+    out.writeInt(stepOffset);
+    out.writeInt(step);
+    out.writeDouble(forgettingExponent);
+    out.writeInt(perTermAnnealingOffset);
+    VectorWritable.writeVector(out, beta);
+    PolymorphicWritable.write(out, prior);
+    VectorWritable.writeVector(out, updateCounts);
+    VectorWritable.writeVector(out, updateSteps);
+  }
+
+  @Override
+  public void readFields(DataInput in) throws IOException {
+    int version = in.readInt();
+    if (version == WRITABLE_VERSION) {
+      mu0 = in.readDouble();
+      decayFactor = in.readDouble();
+      stepOffset = in.readInt();
+      step = in.readInt();
+      forgettingExponent = in.readDouble();
+      perTermAnnealingOffset = in.readInt();
+      beta = VectorWritable.readVector(in);
+      prior = PolymorphicWritable.read(in, PriorFunction.class);
+
+      updateCounts = VectorWritable.readVector(in);
+      updateSteps = VectorWritable.readVector(in);
+    } else {
+      throw new IOException("Incorrect object version, wanted " + WRITABLE_VERSION + " got " + version);
     }
-
-    /**
-     * Chainable configuration option.
-     *
-     * @param alpha New value of decayFactor, the exponential decay rate for the learning rate.
-     * @return This, so other configurations can be chained.
-     */
-    public OnlineLinearPredictor alpha(double alpha) {
-        this.decayFactor = alpha;
-        return this;
-    }
-
-    @Override
-    public OnlineLinearPredictor lambda(double lambda) {
-        // we only over-ride this to provide a more restrictive return type
-        super.lambda(lambda);
-        return this;
-    }
-
-    /**
-     * Chainable configuration option.
-     *
-     * @param learningRate New value of initial learning rate.
-     * @return This, so other configurations can be chained.
-     */
-    public OnlineLinearPredictor learningRate(double learningRate) {
-        this.mu0 = learningRate;
-        return this;
-    }
-
-    public OnlineLinearPredictor stepOffset(int stepOffset) {
-        this.stepOffset = stepOffset;
-        return this;
-    }
-
-    public OnlineLinearPredictor decayExponent(double decayExponent) {
-        if (decayExponent > 0) {
-            decayExponent = -decayExponent;
-        }
-        this.forgettingExponent = decayExponent;
-        return this;
-    }
-
-
-    @Override
-    public double perTermLearningRate(int j) {
-        return Math.sqrt(perTermAnnealingOffset / updateCounts.get(j));
-    }
-
-    @Override
-    public double currentLearningRate() {
-        return mu0 * Math.pow(decayFactor, getStep()) * Math.pow(getStep() + stepOffset, forgettingExponent);
-    }
-
-    public void copyFrom(OnlineLinearPredictor other) {
-        super.copyFrom(other);
-        mu0 = other.mu0;
-        decayFactor = other.decayFactor;
-        strategy = other.strategy;
-
-        stepOffset = other.stepOffset;
-        forgettingExponent = other.forgettingExponent;
-
-        perTermAnnealingOffset = other.perTermAnnealingOffset;
-    }
-
-    public OnlineLinearPredictor copy() {
-        close();
-        OnlineLinearPredictor r = new OnlineLinearPredictor(beta.size(), prior);
-        r.copyFrom(this);
-        return r;
-    }
-
-    @Override
-    public void write(DataOutput out) throws IOException {
-        out.writeInt(WRITABLE_VERSION);
-        out.writeDouble(mu0);
-        out.writeDouble(decayFactor);
-        out.writeInt(stepOffset);
-        out.writeInt(step);
-        out.writeDouble(forgettingExponent);
-        out.writeInt(perTermAnnealingOffset);
-        VectorWritable.writeVector(out, beta);
-        PolymorphicWritable.write(out, prior);
-        VectorWritable.writeVector(out, updateCounts);
-        VectorWritable.writeVector(out, updateSteps);
-    }
-
-    @Override
-    public void readFields(DataInput in) throws IOException {
-        int version = in.readInt();
-        if (version == WRITABLE_VERSION) {
-            mu0 = in.readDouble();
-            decayFactor = in.readDouble();
-            stepOffset = in.readInt();
-            step = in.readInt();
-            forgettingExponent = in.readDouble();
-            perTermAnnealingOffset = in.readInt();
-            beta = VectorWritable.readVector(in);
-            prior = PolymorphicWritable.read(in, PriorFunction.class);
-
-            updateCounts = VectorWritable.readVector(in);
-            updateSteps = VectorWritable.readVector(in);
-        } else {
-            throw new IOException("Incorrect object version, wanted " + WRITABLE_VERSION + " got " + version);
-        }
-    }
+  }
 
 }
