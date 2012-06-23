@@ -18,12 +18,9 @@
 package org.apache.mahout.classifier.sgd;
 
 import com.google.common.base.Preconditions;
-import org.apache.mahout.classifier.AbstractVectorClassifier;
 import org.apache.mahout.classifier.AbstractVectorRegression;
-import org.apache.mahout.classifier.OnlineLearner;
 import org.apache.mahout.classifier.OnlineRegressionLearner;
 import org.apache.mahout.math.DenseVector;
-import org.apache.mahout.math.Matrix;
 import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.function.DoubleFunction;
 import org.apache.mahout.math.function.Functions;
@@ -31,6 +28,7 @@ import org.apache.mahout.math.function.Functions;
 import java.util.Iterator;
 
 /**
+ * TODO: update this documentation
  * Generic definition of a 1 of n logistic regression classifier that returns probabilities in
  * response to a feature vector.  This classifier uses 1 of n-1 coding where the 0-th category
  * is not stored explicitly.

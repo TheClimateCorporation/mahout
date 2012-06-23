@@ -17,17 +17,14 @@
 
 package org.apache.mahout.classifier;
 
-import org.apache.mahout.math.DenseMatrix;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Matrix;
 import org.apache.mahout.math.Vector;
 
-import com.google.common.base.Preconditions;
-
 /**
  * Defines the interface for regression solutions that take input as a vector.  This is implemented
  * as an abstract class so that it can implement a number of handy convenience methods
- * related to classification of vectors.
+ * related to regression of vectors.
  */
 public abstract class AbstractVectorRegression {
     // ------ These are all that are necessary to define a vector classifier.
