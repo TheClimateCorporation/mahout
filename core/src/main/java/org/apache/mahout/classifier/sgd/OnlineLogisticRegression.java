@@ -54,6 +54,7 @@ public class OnlineLogisticRegression extends AbstractOnlineLogisticRegression i
   public OnlineLogisticRegression(int numCategories, int numFeatures, PriorFunction prior) {
     this.numCategories = numCategories;
     this.prior = prior;
+    this.strategy = new SGDStrategy(prior);
 
     updateSteps = new DenseVector(numFeatures);
     updateCounts = new DenseVector(numFeatures).assign(perTermAnnealingOffset);

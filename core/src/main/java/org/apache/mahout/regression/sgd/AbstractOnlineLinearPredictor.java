@@ -18,6 +18,7 @@
 package org.apache.mahout.regression.sgd;
 
 import com.google.common.base.Preconditions;
+import org.apache.mahout.classifier.sgd.SGDStrategy;
 import org.apache.mahout.regression.AbstractVectorLinearPredictor;
 import org.apache.mahout.regression.OnlineLinearPredictorLearner;
 import org.apache.mahout.classifier.sgd.PriorFunction;
@@ -25,6 +26,7 @@ import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.function.DoubleFunction;
 import org.apache.mahout.math.function.Functions;
+import org.apache.mahout.classifier.sgd.SGDLearner;
 
 import java.util.Iterator;
 
@@ -35,11 +37,13 @@ import java.util.Iterator;
  * annealing of learning rates.  Any extension of this abstract class must define the overall
  * and per-term annealing for themselves.
  */
-public abstract class AbstractOnlineLinearPredictor extends AbstractVectorLinearPredictor implements OnlineLinearPredictorLearner {
+public abstract class AbstractOnlineLinearPredictor extends AbstractVectorLinearPredictor implements SGDLearner, OnlineLinearPredictorLearner {
     // coefficients for the prediction.  This is a dense Vector.
     protected Vector beta;
 
     protected int step;
+
+    protected SGDStrategy strategy;
 
     // information about how long since coefficient rows were updated.  This allows lazy regularization.
     protected Vector updateSteps;
@@ -103,26 +107,7 @@ public abstract class AbstractOnlineLinearPredictor extends AbstractVectorLinear
         // update each row of coefficients according to result
         double gradient = this.gradient.apply(groupKey, actual, instance, this);
 
-            // then we apply the gradientBase to the resulting element.
-            Iterator<Vector.Element> nonZeros = instance.iterateNonZero();
-            while (nonZeros.hasNext()) {
-                Vector.Element updateLocation = nonZeros.next();
-                int j = updateLocation.index();
-
-                double newValue = beta.getQuick(j) + gradient * learningRate * perTermLearningRate(j) * instance.get(j);
-                beta.setQuick(j, newValue);
-            }
-
-        // remember that these elements got updated
-        Iterator<Vector.Element> i = instance.iterateNonZero();
-        while (i.hasNext()) {
-            Vector.Element element = i.next();
-            int j = element.index();
-            updateSteps.setQuick(j, getStep());
-            updateCounts.setQuick(j, updateCounts.getQuick(j) + 1);
-        }
-        nextStep();
-
+        strategy.applyGradient(this, instance, beta, gradient, updateSteps, updateCounts);
     }
 
     @Override
@@ -140,23 +125,7 @@ public abstract class AbstractOnlineLinearPredictor extends AbstractVectorLinear
         if (updateSteps == null || isSealed()) {
             return;
         }
-
-        // anneal learning rate
-        double learningRate = currentLearningRate();
-
-        // here we lazily apply the prior to make up for our neglect
-        Iterator<Vector.Element> nonZeros = instance.iterateNonZero();
-        while (nonZeros.hasNext()) {
-            Vector.Element updateLocation = nonZeros.next();
-            int j = updateLocation.index();
-            double missingUpdates = getStep() - updateSteps.get(j);
-            if (missingUpdates > 0) {
-                double rate = getLambda() * learningRate * perTermLearningRate(j);
-                double newValue = prior.age(beta.get(j), missingUpdates, rate);
-                beta.set(j, newValue);
-                updateSteps.set(j, getStep());
-            }
-        }
+        strategy.applyPrior(this, updateSteps, instance, beta);
     }
 
     // these two abstract methods are how extensions can modify the basic learning behavior of this object.
@@ -194,7 +163,7 @@ public abstract class AbstractOnlineLinearPredictor extends AbstractVectorLinear
         return step;
     }
 
-    protected void nextStep() {
+    public void nextStep() {
         step++;
     }
 

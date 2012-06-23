@@ -20,6 +20,7 @@ package org.apache.mahout.regression.sgd;
 import org.apache.hadoop.io.Writable;
 import org.apache.mahout.classifier.sgd.PolymorphicWritable;
 import org.apache.mahout.classifier.sgd.PriorFunction;
+import org.apache.mahout.classifier.sgd.SGDStrategy;
 import org.apache.mahout.math.*;
 
 import java.io.DataInput;
@@ -52,6 +53,7 @@ public class OnlineLinearPredictor extends AbstractOnlineLinearPredictor impleme
 
     public OnlineLinearPredictor(int numFeatures, PriorFunction prior) {
         this.prior = prior;
+        this.strategy = new SGDStrategy(prior);
 
         updateSteps = new DenseVector(numFeatures);
         updateCounts = new DenseVector(numFeatures).assign(perTermAnnealingOffset);
@@ -115,6 +117,7 @@ public class OnlineLinearPredictor extends AbstractOnlineLinearPredictor impleme
         super.copyFrom(other);
         mu0 = other.mu0;
         decayFactor = other.decayFactor;
+        strategy = other.strategy;
 
         stepOffset = other.stepOffset;
         forgettingExponent = other.forgettingExponent;
