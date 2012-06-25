@@ -25,109 +25,6 @@ import java.io.IOException;
 
 public final class OnlineLinearPredictorTest extends OnlineLinearPredictorBaseTest {
 
-    /**
-     * The CrossFoldLearner is probably the best learner to use for new applications.
-     * @throws IOException If test resources aren't readable.
-     */
-//    @Test
-//    public void crossValidation() throws IOException {
-//        Vector target = readStandardData();
-//
-//        OnlineLinearPredictor lr = new OnlineLinearPredictor(2, 8, new L1())
-//                .lambda(1 * 1.0e-3)
-//                .learningRate(50);
-//
-//
-//        train(getInput(), target, lr);
-//
-//        //System.out.printf("%.2f %.5f\n", lr.auc(), lr.logLikelihood());
-//        test(getInput(), target, lr, 0.05, 0.3);
-//
-//    }
-
-//    @Test
-//    public void crossValidatedAuc() throws IOException {
-//        RandomUtils.useTestSeed();
-//        Random gen = RandomUtils.getRandom();
-//
-//        Matrix data = readCsv("cancer.csv");
-//        CrossFoldLearner lr = new CrossFoldLearner(5, 2, 10, new L1())
-//                .stepOffset(10)
-//                .decayExponent(0.7)
-//                .lambda(1 * 1.0e-3)
-//                .learningRate(5);
-//        int k = 0;
-//        int[] ordering = permute(gen, data.numRows());
-//        for (int epoch = 0; epoch < 100; epoch++) {
-//            for (int row : ordering) {
-//                lr.train(row, (int) data.get(row, 9), data.viewRow(row));
-//                System.out.printf("%d,%d,%.3f\n", epoch, k++, lr.auc());
-//            }
-//            assertEquals(1, lr.auc(), 0.2);
-//        }
-//        assertEquals(1, lr.auc(), 0.1);
-//    }
-//
-//    /**
-//     * Verifies that a classifier with known coefficients does the right thing.
-//     */
-//    @Test
-//    public void testClassify() {
-//        OnlineLogisticRegression lr = new OnlineLogisticRegression(3, 2, new L2(1));
-//        // set up some internal coefficients as if we had learned them
-//        lr.setBeta(0, 0, -1);
-//        lr.setBeta(1, 0, -2);
-//
-//        // zero vector gives no information.  All classes are equal.
-//        Vector v = lr.classify(new DenseVector(new double[]{0, 0}));
-//        assertEquals(1 / 3.0, v.get(0), 1.0e-8);
-//        assertEquals(1 / 3.0, v.get(1), 1.0e-8);
-//
-//        v = lr.classifyFull(new DenseVector(new double[]{0, 0}));
-//        assertEquals(1.0, v.zSum(), 1.0e-8);
-//        assertEquals(1 / 3.0, v.get(0), 1.0e-8);
-//        assertEquals(1 / 3.0, v.get(1), 1.0e-8);
-//        assertEquals(1 / 3.0, v.get(2), 1.0e-8);
-//
-//        // weights for second vector component are still zero so all classifications are equally likely
-//        v = lr.classify(new DenseVector(new double[]{0, 1}));
-//        assertEquals(1 / 3.0, v.get(0), 1.0e-3);
-//        assertEquals(1 / 3.0, v.get(1), 1.0e-3);
-//
-//        v = lr.classifyFull(new DenseVector(new double[]{0, 1}));
-//        assertEquals(1.0, v.zSum(), 1.0e-8);
-//        assertEquals(1 / 3.0, v.get(0), 1.0e-3);
-//        assertEquals(1 / 3.0, v.get(1), 1.0e-3);
-//        assertEquals(1 / 3.0, v.get(2), 1.0e-3);
-//
-//        // but the weights on the first component are non-zero
-//        v = lr.classify(new DenseVector(new double[]{1, 0}));
-//        assertEquals(Math.exp(-1) / (1 + Math.exp(-1) + Math.exp(-2)), v.get(0), 1.0e-8);
-//        assertEquals(Math.exp(-2) / (1 + Math.exp(-1) + Math.exp(-2)), v.get(1), 1.0e-8);
-//
-//        v = lr.classifyFull(new DenseVector(new double[]{1, 0}));
-//        assertEquals(1.0, v.zSum(), 1.0e-8);
-//        assertEquals(1 / (1 + Math.exp(-1) + Math.exp(-2)), v.get(0), 1.0e-8);
-//        assertEquals(Math.exp(-1) / (1 + Math.exp(-1) + Math.exp(-2)), v.get(1), 1.0e-8);
-//        assertEquals(Math.exp(-2) / (1 + Math.exp(-1) + Math.exp(-2)), v.get(2), 1.0e-8);
-//
-//        lr.setBeta(0, 1, 1);
-//
-//        v = lr.classifyFull(new DenseVector(new double[]{1, 1}));
-//        assertEquals(1.0, v.zSum(), 1.0e-8);
-//        assertEquals(Math.exp(0) / (1 + Math.exp(0) + Math.exp(-2)), v.get(1), 1.0e-3);
-//        assertEquals(Math.exp(-2) / (1 + Math.exp(0) + Math.exp(-2)), v.get(2), 1.0e-3);
-//        assertEquals(1 / (1 + Math.exp(0) + Math.exp(-2)), v.get(0), 1.0e-3);
-//
-//        lr.setBeta(1, 1, 3);
-//
-//        v = lr.classifyFull(new DenseVector(new double[]{1, 1}));
-//        assertEquals(1.0, v.zSum(), 1.0e-8);
-//        assertEquals(Math.exp(0) / (1 + Math.exp(0) + Math.exp(1)), v.get(1), 1.0e-8);
-//        assertEquals(Math.exp(1) / (1 + Math.exp(0) + Math.exp(1)), v.get(2), 1.0e-8);
-//        assertEquals(1 / (1 + Math.exp(0) + Math.exp(1)), v.get(0), 1.0e-8);
-//    }
-
     @Test
     public void testTrain() throws Exception {
         Vector target = readStandardData();
@@ -140,7 +37,7 @@ public final class OnlineLinearPredictorTest extends OnlineLinearPredictorBaseTe
         //   --target y --categories 2 --predictors  V2 V3 V4 V5 V6 V7 --types n
         OnlineLinearPredictor regression = new OnlineLinearPredictor(4, new L1())
                 .lambda(1 * 1.0e-10)
-                .learningRate(0.1);
+                .learningRate(0.2);
 
         train(getInput(), target, regression);
         test(getInput(), target, regression, 0.05, 0.3);

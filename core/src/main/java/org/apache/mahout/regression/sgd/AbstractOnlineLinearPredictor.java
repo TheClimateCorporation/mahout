@@ -209,5 +209,8 @@ public abstract class AbstractOnlineLinearPredictor extends AbstractVectorLinear
     return k < 1;
   }
 
+  public PriorFunction prior() {
+    return prior;
+  }
 }
 

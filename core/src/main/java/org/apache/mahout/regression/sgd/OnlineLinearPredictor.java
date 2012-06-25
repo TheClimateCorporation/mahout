@@ -17,6 +17,7 @@
 
 package org.apache.mahout.regression.sgd;
 
+import com.google.common.base.Preconditions;
 import org.apache.hadoop.io.Writable;
 import org.apache.mahout.classifier.sgd.PolymorphicWritable;
 import org.apache.mahout.classifier.sgd.PriorFunction;
@@ -36,7 +37,7 @@ public class OnlineLinearPredictor extends AbstractOnlineLinearPredictor impleme
 
   // these next two control decayFactor^steps exponential type of annealing
   // learning rate and decay factor
-  private double mu0 = 1;
+  private double mu0 = 0.01;
   private double decayFactor = 1 - 1.0e-3;
 
   // these next two control 1/steps^forget type annealing
@@ -47,6 +48,12 @@ public class OnlineLinearPredictor extends AbstractOnlineLinearPredictor impleme
   // controls how per term annealing works
   private int perTermAnnealingOffset = 20;
 
+  public int numFeatures() {
+    return numFeatures;
+  }
+
+  private int numFeatures;
+
   public OnlineLinearPredictor() {
     // private constructor available for serialization, but not normal use
   }
@@ -54,6 +61,7 @@ public class OnlineLinearPredictor extends AbstractOnlineLinearPredictor impleme
   public OnlineLinearPredictor(int numFeatures, PriorFunction prior) {
     this.prior = prior;
     this.strategy = new SGDStrategy(prior);
+    this.numFeatures = numFeatures;
 
     updateSteps = new DenseVector(numFeatures);
     updateCounts = new DenseVector(numFeatures).assign(perTermAnnealingOffset);
@@ -73,6 +81,7 @@ public class OnlineLinearPredictor extends AbstractOnlineLinearPredictor impleme
 
   @Override
   public OnlineLinearPredictor lambda(double lambda) {
+    Preconditions.checkArgument(lambda >= 0, "lambda must be non-negative");
     // we only over-ride this to provide a more restrictive return type
     super.lambda(lambda);
     return this;
@@ -85,6 +94,7 @@ public class OnlineLinearPredictor extends AbstractOnlineLinearPredictor impleme
    * @return This, so other configurations can be chained.
    */
   public OnlineLinearPredictor learningRate(double learningRate) {
+    Preconditions.checkArgument(learningRate < 1.0 && learningRate > 0.0, "learning rate must be in (0,1)");
     this.mu0 = learningRate;
     return this;
   }

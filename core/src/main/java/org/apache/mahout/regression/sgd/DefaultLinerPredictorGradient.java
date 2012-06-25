@@ -38,7 +38,6 @@ public class DefaultLinerPredictorGradient implements LinearPredictorGradient {
     // what does the current model say?
     double v = predictor.predict(instance);
 
-    // the 2.0 is not strictly necessary, but included to match the standard form of the L2 gradient
-    return 2.0 * (actual - v);
+    return (actual - v);
   }
 }
