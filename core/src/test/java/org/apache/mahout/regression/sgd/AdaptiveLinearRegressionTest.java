@@ -53,9 +53,9 @@ public final class AdaptiveLinearRegressionTest extends MahoutTestCase {
       AdaptiveLinearRegression.TrainingExample r = getExample(i, gen);
       x.train(r.getKey(), r.getActual(), r.getInstance());
       if (i % 1000 == 0 && x.getBest() != null) {
-        System.out.printf("%10d %10.4f %10.8f %.3f\n",
+        System.out.printf("%10d %10.4f %10.8f %.8f\n",
             i, x.mse(),
-            Math.log10(x.getBest().getMappedParams()[0]), x.getBest().getMappedParams()[1]);
+            Math.log10(x.getBest().getMappedParams()[0]), Math.log10(x.getBest().getMappedParams()[1]));
       }
     }
     assertEquals(0.0, x.mse(), 0.1);

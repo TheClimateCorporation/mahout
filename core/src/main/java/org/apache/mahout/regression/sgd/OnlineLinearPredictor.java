@@ -94,7 +94,8 @@ public class OnlineLinearPredictor extends AbstractOnlineLinearPredictor impleme
    * @return This, so other configurations can be chained.
    */
   public OnlineLinearPredictor learningRate(double learningRate) {
-    Preconditions.checkArgument(learningRate < 1.0 && learningRate > 0.0, "learning rate must be in (0,1)");
+    Preconditions.checkArgument(learningRate < 1.0 && learningRate > 0.0 && Double.NaN != learningRate,
+            "learning rate must be in (0,1)");
     this.mu0 = learningRate;
     return this;
   }

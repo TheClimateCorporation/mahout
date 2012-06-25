@@ -28,6 +28,7 @@ import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.VectorWritable;
 import org.apache.mahout.math.stats.OnlineMSE;
 import org.apache.mahout.regression.OnlineLinearPredictorLearner;
+import org.codehaus.jackson.sym.NameN;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -361,6 +362,14 @@ public class AdaptiveLinearRegression implements OnlineLinearPredictorLearner, W
     this.freezeSurvivors = freezeSurvivors;
   }
 
+  public double predict(Vector features){
+    if(best == null){
+        return Double.NaN;
+    }else{
+        return best.getPayload().getLearner().predict(features);
+    }
+  }
+
   /**
    * Provides a shim between the EP optimization stuff and the CrossFoldLearner.  The most important
    * interface has to do with the parameters of the optimization.  These are taken from the double[]
@@ -414,9 +423,9 @@ public class AdaptiveLinearRegression implements OnlineLinearPredictorLearner, W
     public void setMappings(State<Wrapper, CrossFoldRegressionLearner> x) {
       int i = 0;
       // set the range for regularization (lambda)
-      x.setMap(i++, Mapping.logLimit(1.0e-8, 0.1));
+      x.setMap(i++, Mapping.logLimit(1.0e-20, 1e20));
       // set the range for learning rate (mu)
-      x.setMap(i, Mapping.softLimit(1.0e-5, 0.2, 0.1));
+      x.setMap(i, Mapping.logLimit(1.0e-40, 0.2));
     }
 
     public void train(TrainingExample example) {

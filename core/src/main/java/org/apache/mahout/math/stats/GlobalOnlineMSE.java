@@ -48,7 +48,7 @@ public class GlobalOnlineMSE implements OnlineMSE {
     FIFO, FAIR, RANDOM
   }
 
-  public static final int HISTORY = 500;
+  public static final int HISTORY = 50;
 
   // defines the exponential averaging window for results
   private int windowSize = Integer.MAX_VALUE;
@@ -99,7 +99,7 @@ public class GlobalOnlineMSE implements OnlineMSE {
     double sum = 0.0;
     int count = 0;
     for(Vector.Element element : errors){
-      if(!(Double.NaN == element.get())){
+      if(!(Double.isNaN(element.get()))){
         sum = sum + element.get();
         count++;
       }
