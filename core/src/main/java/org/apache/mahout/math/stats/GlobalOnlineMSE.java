@@ -48,7 +48,7 @@ public class GlobalOnlineMSE implements OnlineMSE {
     FIFO, FAIR, RANDOM
   }
 
-  public static final int HISTORY = 50;
+  public static final int HISTORY = 500;
 
   // defines the exponential averaging window for results
   private int windowSize = Integer.MAX_VALUE;
