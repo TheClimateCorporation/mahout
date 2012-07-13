@@ -37,10 +37,13 @@ import java.util.Iterator;
  * annealing of learning rates.  Any extension of this abstract class must define the overall
  * and per-term annealing for themselves.
  */
-public abstract class AbstractOnlineLogisticRegression extends AbstractVectorClassifier implements OnlineLearner {
+public abstract class AbstractOnlineLogisticRegression extends AbstractVectorClassifier implements OnlineLearner, SGDLearner {
   // coefficients for the classification.  This is a dense matrix
   // that is (numCategories-1) x numFeatures
   protected Matrix beta;
+
+  // the strategy to use for learning via SGD
+  protected SGDStrategy strategy;
 
   // number of categories we are classifying.  This should the number of rows of beta plus one.
   protected int numCategories;
@@ -167,27 +170,8 @@ public abstract class AbstractOnlineLogisticRegression extends AbstractVectorCla
     Vector gradient = this.gradient.apply(groupKey, actual, instance, this);
     for (int i = 0; i < numCategories - 1; i++) {
       double gradientBase = gradient.get(i);
-
-      // then we apply the gradientBase to the resulting element.
-      Iterator<Vector.Element> nonZeros = instance.iterateNonZero();
-      while (nonZeros.hasNext()) {
-        Vector.Element updateLocation = nonZeros.next();
-        int j = updateLocation.index();
-
-        double newValue = beta.getQuick(i, j) + gradientBase * learningRate * perTermLearningRate(j) * instance.get(j);
-        beta.setQuick(i, j, newValue);
-      }
+      strategy.applyGradient(this, instance, beta.viewRow(i), gradientBase, updateSteps, updateCounts);
     }
-
-    // remember that these elements got updated
-    Iterator<Vector.Element> i = instance.iterateNonZero();
-    while (i.hasNext()) {
-      Vector.Element element = i.next();
-      int j = element.index();
-      updateSteps.setQuick(j, getStep());
-      updateCounts.setQuick(j, updateCounts.getQuick(j) + 1);
-    }
-    nextStep();
 
   }
 
@@ -206,27 +190,13 @@ public abstract class AbstractOnlineLogisticRegression extends AbstractVectorCla
       return;
     }
 
-    // anneal learning rate
-    double learningRate = currentLearningRate();
-
     // here we lazily apply the prior to make up for our neglect
     for (int i = 0; i < numCategories - 1; i++) {
-      Iterator<Vector.Element> nonZeros = instance.iterateNonZero();
-      while (nonZeros.hasNext()) {
-        Vector.Element updateLocation = nonZeros.next();
-        int j = updateLocation.index();
-        double missingUpdates = getStep() - updateSteps.get(j);
-        if (missingUpdates > 0) {
-          double rate = getLambda() * learningRate * perTermLearningRate(j);
-          double newValue = prior.age(beta.get(i, j), missingUpdates, rate);
-          beta.set(i, j, newValue);
-          updateSteps.set(j, getStep());
-        }
-      }
+        strategy.applyPrior(this, updateSteps, instance, beta.viewRow(i));
     }
   }
 
-  // these two abstract methods are how extensions can modify the basic learning behavior of this object.
+    // these two abstract methods are how extensions can modify the basic learning behavior of this object.
 
   public abstract double perTermLearningRate(int j);
 
@@ -270,7 +240,7 @@ public abstract class AbstractOnlineLogisticRegression extends AbstractVectorCla
     return step;
   }
 
-  protected void nextStep() {
+  public void nextStep() {
     step++;
   }
 
@@ -304,6 +274,7 @@ public abstract class AbstractOnlineLogisticRegression extends AbstractVectorCla
 
     beta.assign(other.beta);
 
+    strategy = other.strategy;
     step = other.step;
 
     updateSteps.assign(other.updateSteps);
