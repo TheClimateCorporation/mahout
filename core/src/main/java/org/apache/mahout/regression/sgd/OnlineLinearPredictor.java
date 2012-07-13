@@ -15,13 +15,14 @@
  * limitations under the License.
  */
 
-package org.apache.mahout.classifier.sgd;
+package org.apache.mahout.regression.sgd;
 
+import com.google.common.base.Preconditions;
 import org.apache.hadoop.io.Writable;
-import org.apache.mahout.math.DenseMatrix;
-import org.apache.mahout.math.DenseVector;
-import org.apache.mahout.math.MatrixWritable;
-import org.apache.mahout.math.VectorWritable;
+import org.apache.mahout.classifier.sgd.PolymorphicWritable;
+import org.apache.mahout.classifier.sgd.PriorFunction;
+import org.apache.mahout.classifier.sgd.SGDStrategy;
+import org.apache.mahout.math.*;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -31,12 +32,12 @@ import java.io.IOException;
  * Extends the basic on-line logistic regression learner with a specific set of learning
  * rate annealing schedules.
  */
-public class OnlineLogisticRegression extends AbstractOnlineLogisticRegression implements Writable {
+public class OnlineLinearPredictor extends AbstractOnlineLinearPredictor implements Writable {
   public static final int WRITABLE_VERSION = 1;
 
   // these next two control decayFactor^steps exponential type of annealing
   // learning rate and decay factor
-  private double mu0 = 1;
+  private double mu0 = 0.01;
   private double decayFactor = 1 - 1.0e-3;
 
   // these next two control 1/steps^forget type annealing
@@ -47,18 +48,24 @@ public class OnlineLogisticRegression extends AbstractOnlineLogisticRegression i
   // controls how per term annealing works
   private int perTermAnnealingOffset = 20;
 
-  public OnlineLogisticRegression() {
+  public int numFeatures() {
+    return numFeatures;
+  }
+
+  private int numFeatures;
+
+  public OnlineLinearPredictor() {
     // private constructor available for serialization, but not normal use
   }
 
-  public OnlineLogisticRegression(int numCategories, int numFeatures, PriorFunction prior) {
-    this.numCategories = numCategories;
+  public OnlineLinearPredictor(int numFeatures, PriorFunction prior) {
     this.prior = prior;
     this.strategy = new SGDStrategy(prior);
+    this.numFeatures = numFeatures;
 
     updateSteps = new DenseVector(numFeatures);
     updateCounts = new DenseVector(numFeatures).assign(perTermAnnealingOffset);
-    beta = new DenseMatrix(numCategories - 1, numFeatures);
+    beta = new DenseVector(numFeatures);
   }
 
   /**
@@ -67,13 +74,14 @@ public class OnlineLogisticRegression extends AbstractOnlineLogisticRegression i
    * @param alpha New value of decayFactor, the exponential decay rate for the learning rate.
    * @return This, so other configurations can be chained.
    */
-  public OnlineLogisticRegression alpha(double alpha) {
+  public OnlineLinearPredictor alpha(double alpha) {
     this.decayFactor = alpha;
     return this;
   }
 
   @Override
-  public OnlineLogisticRegression lambda(double lambda) {
+  public OnlineLinearPredictor lambda(double lambda) {
+    Preconditions.checkArgument(lambda >= 0, "lambda must be non-negative");
     // we only over-ride this to provide a more restrictive return type
     super.lambda(lambda);
     return this;
@@ -85,17 +93,19 @@ public class OnlineLogisticRegression extends AbstractOnlineLogisticRegression i
    * @param learningRate New value of initial learning rate.
    * @return This, so other configurations can be chained.
    */
-  public OnlineLogisticRegression learningRate(double learningRate) {
+  public OnlineLinearPredictor learningRate(double learningRate) {
+    Preconditions.checkArgument(learningRate < 1.0 && learningRate > 0.0 && Double.NaN != learningRate,
+            "learning rate must be in (0,1)");
     this.mu0 = learningRate;
     return this;
   }
 
-  public OnlineLogisticRegression stepOffset(int stepOffset) {
+  public OnlineLinearPredictor stepOffset(int stepOffset) {
     this.stepOffset = stepOffset;
     return this;
   }
 
-  public OnlineLogisticRegression decayExponent(double decayExponent) {
+  public OnlineLinearPredictor decayExponent(double decayExponent) {
     if (decayExponent > 0) {
       decayExponent = -decayExponent;
     }
@@ -114,10 +124,11 @@ public class OnlineLogisticRegression extends AbstractOnlineLogisticRegression i
     return mu0 * Math.pow(decayFactor, getStep()) * Math.pow(getStep() + stepOffset, forgettingExponent);
   }
 
-  public void copyFrom(OnlineLogisticRegression other) {
+  public void copyFrom(OnlineLinearPredictor other) {
     super.copyFrom(other);
     mu0 = other.mu0;
     decayFactor = other.decayFactor;
+    strategy = other.strategy;
 
     stepOffset = other.stepOffset;
     forgettingExponent = other.forgettingExponent;
@@ -125,9 +136,9 @@ public class OnlineLogisticRegression extends AbstractOnlineLogisticRegression i
     perTermAnnealingOffset = other.perTermAnnealingOffset;
   }
 
-  public OnlineLogisticRegression copy() {
+  public OnlineLinearPredictor copy() {
     close();
-    OnlineLogisticRegression r = new OnlineLogisticRegression(numCategories(), numFeatures(), prior);
+    OnlineLinearPredictor r = new OnlineLinearPredictor(beta.size(), prior);
     r.copyFrom(this);
     return r;
   }
@@ -141,8 +152,7 @@ public class OnlineLogisticRegression extends AbstractOnlineLogisticRegression i
     out.writeInt(step);
     out.writeDouble(forgettingExponent);
     out.writeInt(perTermAnnealingOffset);
-    out.writeInt(numCategories);
-    MatrixWritable.writeMatrix(out, beta);
+    VectorWritable.writeVector(out, beta);
     PolymorphicWritable.write(out, prior);
     VectorWritable.writeVector(out, updateCounts);
     VectorWritable.writeVector(out, updateSteps);
@@ -158,14 +168,15 @@ public class OnlineLogisticRegression extends AbstractOnlineLogisticRegression i
       step = in.readInt();
       forgettingExponent = in.readDouble();
       perTermAnnealingOffset = in.readInt();
-      numCategories = in.readInt();
-      beta = MatrixWritable.readMatrix(in);
+      beta = VectorWritable.readVector(in);
       prior = PolymorphicWritable.read(in, PriorFunction.class);
       strategy = new SGDStrategy(prior);
+
       updateCounts = VectorWritable.readVector(in);
       updateSteps = VectorWritable.readVector(in);
     } else {
       throw new IOException("Incorrect object version, wanted " + WRITABLE_VERSION + " got " + version);
     }
   }
+
 }
