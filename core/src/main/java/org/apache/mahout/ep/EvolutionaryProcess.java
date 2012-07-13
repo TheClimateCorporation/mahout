@@ -34,6 +34,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import static com.google.common.collect.Lists.*;
+
 /**
  * Allows evolutionary optimization where the state function can't be easily
  * packaged for the optimizer to execute.  A good example of this is with
@@ -68,6 +70,11 @@ import java.util.concurrent.Future;
 public class EvolutionaryProcess<T extends Payload<U>, U> implements Writable, Closeable {
   // used to execute operations on the population in thread parallel.
   private ExecutorService pool;
+  private Objective objective;
+
+  public enum Objective {
+    MIN, MAX
+  }
 
   // threadCount is serialized so that we can reconstruct the thread pool
   private int threadCount;
@@ -81,7 +88,7 @@ public class EvolutionaryProcess<T extends Payload<U>, U> implements Writable, C
   private int populationSize;
 
   public EvolutionaryProcess() {
-    population = Lists.newArrayList();
+    population = newArrayList();
   }
 
   /**
@@ -90,9 +97,11 @@ public class EvolutionaryProcess<T extends Payload<U>, U> implements Writable, C
    * @param threadCount               How many threads to use in parallelDo
    * @param populationSize            How large a population to use
    * @param seed                      An initial population member
+   * @param objective                 Minimize or Maximize population measure
    */
-  public EvolutionaryProcess(int threadCount, int populationSize, State<T, U> seed) {
+  public EvolutionaryProcess(int threadCount, int populationSize, State<T, U> seed, Objective objective) {
     this.populationSize = populationSize;
+    this.objective = objective;
     setThreadCount(threadCount);
     initializePopulation(populationSize, seed);
   }
@@ -114,11 +123,16 @@ public class EvolutionaryProcess<T extends Payload<U>, U> implements Writable, C
    * @param survivors          How many survivors we want to keep.
    */
   public void mutatePopulation(int survivors) {
-    // largest value first, oldest first in case of ties
-    Collections.sort(population);
+    if(objective == Objective.MAX){
+      // largest value first, oldest first in case of ties
+      Collections.sort(population);
+    } else {
+      // smallest value first, oldest first in case of ties
+      Collections.sort(population, Collections.reverseOrder());
+    }
 
     // we copy here to avoid concurrent modification
-    List<State<T, U>> parents = Lists.newArrayList(population.subList(0, survivors));
+    List<State<T, U>> parents = newArrayList(population.subList(0, survivors));
     population.subList(survivors, population.size()).clear();
 
     // fill out the population with offspring from the survivors
@@ -139,7 +153,7 @@ public class EvolutionaryProcess<T extends Payload<U>, U> implements Writable, C
    * and rethrown nested in an ExecutionException.
    */
   public State<T, U> parallelDo(final Function<Payload<U>> fn) throws InterruptedException, ExecutionException {
-    Collection<Callable<State<T, U>>> tasks = Lists.newArrayList();
+    Collection<Callable<State<T, U>>> tasks = newArrayList();
     for (final State<T, U> state : population) {
       tasks.add(new Callable<State<T, U>>() {
         @Override
@@ -152,8 +166,34 @@ public class EvolutionaryProcess<T extends Payload<U>, U> implements Writable, C
     }
 
     List<Future<State<T, U>>> r = pool.invokeAll(tasks);
-
     // zip through the results and find the best one
+    State<T, U> best;
+    if(objective == Objective.MIN){
+      best = findMin(r);
+    }else{
+      best = findMax(r);
+    }
+    if (best == null) {
+      best = r.get(0).get();
+    }
+    return best;
+  }
+
+  private State<T, U> findMin(List<Future<State<T, U>>> r) throws InterruptedException, ExecutionException {
+    double min = Double.POSITIVE_INFINITY;
+    State<T, U> best = null;
+    for (Future<State<T, U>> future : r) {
+      State<T, U> s = future.get();
+      double value = s.getValue();
+      if (!Double.isNaN(value) && value <= min) {
+        min = value;
+        best = s;
+      }
+    }
+    return best;
+  }
+
+  private State<T, U> findMax(List<Future<State<T, U>>> r) throws InterruptedException, ExecutionException {
     double max = Double.NEGATIVE_INFINITY;
     State<T, U> best = null;
     for (Future<State<T, U>> future : r) {
@@ -164,10 +204,6 @@ public class EvolutionaryProcess<T extends Payload<U>, U> implements Writable, C
         best = s;
       }
     }
-    if (best == null) {
-      best = r.get(0).get();
-    }
-
     return best;
   }
 
@@ -204,6 +240,11 @@ public class EvolutionaryProcess<T extends Payload<U>, U> implements Writable, C
   public void write(DataOutput out) throws IOException {
     out.writeInt(threadCount);
     out.writeInt(population.size());
+    if(objective == Objective.MAX){
+      out.writeInt(1);
+    }else{
+      out.writeInt(-1);
+    }
     for (State<T, U> state : population) {
       PolymorphicWritable.write(out, state);
     }
@@ -213,7 +254,13 @@ public class EvolutionaryProcess<T extends Payload<U>, U> implements Writable, C
   public void readFields(DataInput input) throws IOException {
     setThreadCount(input.readInt());
     int n = input.readInt();
-    population = Lists.newArrayList();
+    int o = input.readInt();
+    if(o == 1){
+      objective = Objective.MAX;
+    }else{
+      objective = Objective.MIN;
+    }
+    population = newArrayList();
     for (int i = 0; i < n; i++) {
       State<T, U> state = PolymorphicWritable.read(input, State.class);
       population.add(state);
