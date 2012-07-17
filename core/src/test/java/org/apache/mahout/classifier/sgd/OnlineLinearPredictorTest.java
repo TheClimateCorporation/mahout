@@ -21,26 +21,19 @@ import org.apache.mahout.math.Vector;
 import org.apache.mahout.regression.sgd.OnlineLinearPredictor;
 import org.junit.Test;
 
-import java.io.IOException;
-
 public final class OnlineLinearPredictorTest extends OnlineLinearPredictorBaseTest {
 
     @Test
     public void testTrain() throws Exception {
         Vector target = readStandardData();
-
-
         // lambda here needs to be relatively small to avoid swamping the actual signal, but can be
         // larger than usual because the data are dense.  The learning rate doesn't matter too much
         // for this example, but should generally be < 1
         // --passes 1 --rate 50 --lambda 0.001 --input sgd-y.csv --features 21 --output model --noBias
         //   --target y --categories 2 --predictors  V2 V3 V4 V5 V6 V7 --types n
-        OnlineLinearPredictor regression = new OnlineLinearPredictor(4, new L1())
-                .lambda(1 * 1.0e-10)
-                .learningRate(0.2);
-
+        OnlineLinearPredictor regression = new OnlineLinearPredictor(4, new PriorSGDStrategy(new L1())).learningRate(0.2);
+        ((PriorSGDStrategy) (regression.getStrategy())).setLambda(1 * 1.0e-10);
         train(getInput(), target, regression);
         test(getInput(), target, regression, 0.05, 0.3);
     }
-
 }

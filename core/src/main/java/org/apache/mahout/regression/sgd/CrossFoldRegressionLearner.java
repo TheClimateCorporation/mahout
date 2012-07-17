@@ -16,10 +16,15 @@
  */
 package org.apache.mahout.regression.sgd;
 
-import com.google.common.collect.Lists;
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+import java.util.List;
+
 import org.apache.hadoop.io.Writable;
 import org.apache.mahout.classifier.sgd.PolymorphicWritable;
 import org.apache.mahout.classifier.sgd.PriorFunction;
+import org.apache.mahout.classifier.sgd.SGDStrategy;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.function.Functions;
@@ -28,10 +33,7 @@ import org.apache.mahout.math.stats.OnlineMSE;
 import org.apache.mahout.regression.AbstractVectorLinearPredictor;
 import org.apache.mahout.regression.OnlineLinearPredictorLearner;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.util.List;
+import com.google.common.collect.Lists;
 
 /**
  * Does cross-fold validation of MSE on several online linear regression models. Each record is passed
@@ -48,19 +50,18 @@ public class CrossFoldRegressionLearner extends AbstractVectorLinearPredictor im
   // lambda, learningRate, perTermOffset, perTermExponent
   private double[] parameters = new double[4];
   private int numFeatures;
-  private PriorFunction prior;
   private double percentCorrect;
-
+  private SGDStrategy strategy;
   private int windowSize = Integer.MAX_VALUE;
 
   public CrossFoldRegressionLearner() {
   }
 
-  public CrossFoldRegressionLearner(int folds, int numFeatures, PriorFunction prior) {
+  public CrossFoldRegressionLearner(int folds, int numFeatures, SGDStrategy strategy) {
     this.numFeatures = numFeatures;
-    this.prior = prior;
+    this.strategy = strategy;
     for (int i = 0; i < folds; i++) {
-      OnlineLinearPredictor model = new OnlineLinearPredictor(numFeatures, prior);
+      OnlineLinearPredictor model = new OnlineLinearPredictor(numFeatures, strategy);
       model.alpha(1).stepOffset(0).decayExponent(0);
       models.add(model);
     }
@@ -68,12 +69,12 @@ public class CrossFoldRegressionLearner extends AbstractVectorLinearPredictor im
 
   // -------- builder-like configuration methods
 
-  public CrossFoldRegressionLearner lambda(double v) {
-    for (OnlineLinearPredictor model : models) {
-      model.lambda(v);
-    }
-    return this;
-  }
+//  public CrossFoldRegressionLearner lambda(double v) {
+//    for (OnlineLinearPredictor model : models) {
+//      model.getStrategy().setLambda(v);
+//    }
+//    return this;
+//  }
 
   public CrossFoldRegressionLearner learningRate(double x) {
     for (OnlineLinearPredictor model : models) {
@@ -170,12 +171,12 @@ public class CrossFoldRegressionLearner extends AbstractVectorLinearPredictor im
   // -------- evolutionary optimization
 
   public CrossFoldRegressionLearner copy() {
-    CrossFoldRegressionLearner r = new CrossFoldRegressionLearner(models.size(), numFeatures, prior);
+    CrossFoldRegressionLearner r = new CrossFoldRegressionLearner(models.size(), numFeatures, strategy.copy());
     r.models.clear();
     for (OnlineLinearPredictor model : models) {
       model.close();
       OnlineLinearPredictor newModel =
-          new OnlineLinearPredictor(model.numFeatures(), model.prior());
+          new OnlineLinearPredictor(model.numFeatures(), model.strategy.copy());
       newModel.copyFrom(model);
       r.models.add(newModel);
     }
@@ -219,14 +220,6 @@ public class CrossFoldRegressionLearner extends AbstractVectorLinearPredictor im
     mse.setWindowSize(windowSize);
   }
 
-  public PriorFunction getPrior() {
-    return prior;
-  }
-
-  public void setPrior(PriorFunction prior) {
-    this.prior = prior;
-  }
-
   @Override
   public void write(DataOutput out) throws IOException {
     out.writeInt(record);
@@ -240,7 +233,7 @@ public class CrossFoldRegressionLearner extends AbstractVectorLinearPredictor im
       out.writeDouble(x);
     }
     out.writeInt(numFeatures);
-    PolymorphicWritable.write(out, prior);
+    PolymorphicWritable.write(out, strategy);
     out.writeInt(windowSize);
   }
 
@@ -259,7 +252,7 @@ public class CrossFoldRegressionLearner extends AbstractVectorLinearPredictor im
       parameters[i] = in.readDouble();
     }
     numFeatures = in.readInt();
-    prior = PolymorphicWritable.read(in, PriorFunction.class);
+    strategy = PolymorphicWritable.read(in, SGDStrategy.class);
     windowSize = in.readInt();
   }
 

@@ -17,14 +17,15 @@
 
 package org.apache.mahout.regression.sgd;
 
+import java.util.Random;
+
 import org.apache.mahout.classifier.sgd.L1;
+import org.apache.mahout.classifier.sgd.PriorSGDStrategy;
 import org.apache.mahout.common.MahoutTestCase;
 import org.apache.mahout.common.RandomUtils;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 import org.junit.Test;
-
-import java.util.Random;
 
 public final class AdaptiveLinearRegressionTest extends MahoutTestCase {
 
@@ -33,7 +34,7 @@ public final class AdaptiveLinearRegressionTest extends MahoutTestCase {
 
     Random gen = RandomUtils.getRandom();
 
-    AdaptiveLinearRegression.Wrapper cl = new AdaptiveLinearRegression.Wrapper(200, new L1());
+    AdaptiveLinearRegression.Wrapper cl = new AdaptiveLinearRegression.Wrapper(200, new PriorSGDStrategy(new L1()));
     cl.update(new double[]{1.0e-2, 0.01});
 
     for (int i = 0; i < 10000; i++) {
@@ -46,7 +47,7 @@ public final class AdaptiveLinearRegressionTest extends MahoutTestCase {
     assertEquals(0.0, cl.getLearner().mse(), 0.1);
 
     // we expect AdaptiveLinearRegression to learn the similar parameters to above
-    AdaptiveLinearRegression x = new AdaptiveLinearRegression(200, new L1());
+    AdaptiveLinearRegression x = new AdaptiveLinearRegression(200, new PriorSGDStrategy(new L1()));
     x.setInterval(1000);
 
     for (int i = 0; i < 20000; i++) {
@@ -84,7 +85,7 @@ public final class AdaptiveLinearRegressionTest extends MahoutTestCase {
 
   @Test
   public void constantStep() {
-    AdaptiveLinearRegression lr = new AdaptiveLinearRegression(1000, new L1());
+    AdaptiveLinearRegression lr = new AdaptiveLinearRegression(1000, new PriorSGDStrategy(new L1()));
     lr.setInterval(5000);
     assertEquals(20000, lr.nextStep(15000));
     assertEquals(20000, lr.nextStep(15001));
@@ -95,7 +96,7 @@ public final class AdaptiveLinearRegressionTest extends MahoutTestCase {
 
   @Test
   public void growingStep() {
-    AdaptiveLinearRegression lr = new AdaptiveLinearRegression(1000, new L1());
+    AdaptiveLinearRegression lr = new AdaptiveLinearRegression(1000, new PriorSGDStrategy(new L1()));
     lr.setInterval(2000, 10000);
 
     // start with minimum step size

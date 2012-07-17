@@ -17,16 +17,19 @@
 
 package org.apache.mahout.regression.sgd;
 
-import com.google.common.base.Preconditions;
-import org.apache.hadoop.io.Writable;
-import org.apache.mahout.classifier.sgd.PolymorphicWritable;
-import org.apache.mahout.classifier.sgd.PriorFunction;
-import org.apache.mahout.classifier.sgd.SGDStrategy;
-import org.apache.mahout.math.*;
-
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+
+import org.apache.hadoop.io.Writable;
+import org.apache.mahout.classifier.sgd.PolymorphicWritable;
+import org.apache.mahout.classifier.sgd.PriorFunction;
+import org.apache.mahout.classifier.sgd.PriorSGDStrategy;
+import org.apache.mahout.classifier.sgd.SGDStrategy;
+import org.apache.mahout.math.DenseVector;
+import org.apache.mahout.math.VectorWritable;
+
+import com.google.common.base.Preconditions;
 
 /**
  * Extends the basic on-line logistic regression learner with a specific set of learning
@@ -58,9 +61,8 @@ public class OnlineLinearPredictor extends AbstractOnlineLinearPredictor impleme
     // private constructor available for serialization, but not normal use
   }
 
-  public OnlineLinearPredictor(int numFeatures, PriorFunction prior) {
-    this.prior = prior;
-    this.strategy = new SGDStrategy(prior);
+  public OnlineLinearPredictor(int numFeatures, SGDStrategy strategy) {
+    this.strategy = strategy;
     this.numFeatures = numFeatures;
 
     updateSteps = new DenseVector(numFeatures);
@@ -79,13 +81,13 @@ public class OnlineLinearPredictor extends AbstractOnlineLinearPredictor impleme
     return this;
   }
 
-  @Override
-  public OnlineLinearPredictor lambda(double lambda) {
-    Preconditions.checkArgument(lambda >= 0, "lambda must be non-negative");
-    // we only over-ride this to provide a more restrictive return type
-    super.lambda(lambda);
-    return this;
-  }
+//  @Override
+//  public OnlineLinearPredictor lambda(double lambda) {
+//    Preconditions.checkArgument(lambda >= 0, "lambda must be non-negative");
+//    // we only over-ride this to provide a more restrictive return type
+//    super.lambda(lambda);
+//    return this;
+//  }
 
   /**
    * Chainable configuration option.
@@ -128,7 +130,7 @@ public class OnlineLinearPredictor extends AbstractOnlineLinearPredictor impleme
     super.copyFrom(other);
     mu0 = other.mu0;
     decayFactor = other.decayFactor;
-    strategy = other.strategy;
+    strategy = other.strategy.copy();
 
     stepOffset = other.stepOffset;
     forgettingExponent = other.forgettingExponent;
@@ -138,7 +140,7 @@ public class OnlineLinearPredictor extends AbstractOnlineLinearPredictor impleme
 
   public OnlineLinearPredictor copy() {
     close();
-    OnlineLinearPredictor r = new OnlineLinearPredictor(beta.size(), prior);
+    OnlineLinearPredictor r = new OnlineLinearPredictor(beta.size(), strategy.copy());
     r.copyFrom(this);
     return r;
   }
@@ -153,7 +155,7 @@ public class OnlineLinearPredictor extends AbstractOnlineLinearPredictor impleme
     out.writeDouble(forgettingExponent);
     out.writeInt(perTermAnnealingOffset);
     VectorWritable.writeVector(out, beta);
-    PolymorphicWritable.write(out, prior);
+    PolymorphicWritable.write(out, strategy);
     VectorWritable.writeVector(out, updateCounts);
     VectorWritable.writeVector(out, updateSteps);
   }
@@ -169,14 +171,11 @@ public class OnlineLinearPredictor extends AbstractOnlineLinearPredictor impleme
       forgettingExponent = in.readDouble();
       perTermAnnealingOffset = in.readInt();
       beta = VectorWritable.readVector(in);
-      prior = PolymorphicWritable.read(in, PriorFunction.class);
-      strategy = new SGDStrategy(prior);
-
+      strategy = PolymorphicWritable.read(in, SGDStrategy.class);
       updateCounts = VectorWritable.readVector(in);
       updateSteps = VectorWritable.readVector(in);
     } else {
       throw new IOException("Incorrect object version, wanted " + WRITABLE_VERSION + " got " + version);
     }
   }
-
 }

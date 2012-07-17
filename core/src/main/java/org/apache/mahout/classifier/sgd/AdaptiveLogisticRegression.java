@@ -82,6 +82,7 @@ public class AdaptiveLogisticRegression implements OnlineLearner, Writable {
   private int poolSize = DEFAULT_POOL_SIZE;
   private State<Wrapper, CrossFoldLearner> seed;
   private int numFeatures;
+  private SGDStrategy strategy;
 
   private boolean freezeSurvivors = true;
 
@@ -96,8 +97,8 @@ public class AdaptiveLogisticRegression implements OnlineLearner, Writable {
    *
    * @see {@link #AdaptiveLogisticRegression(int, int, org.apache.mahout.classifier.sgd.PriorFunction, int, int)}
    */
-  public AdaptiveLogisticRegression(int numCategories, int numFeatures, PriorFunction prior) {
-    this(numCategories, numFeatures, prior, DEFAULT_THREAD_COUNT, DEFAULT_POOL_SIZE);
+  public AdaptiveLogisticRegression(int numCategories, int numFeatures, SGDStrategy strategy) {
+    this(numCategories, numFeatures, strategy, DEFAULT_THREAD_COUNT, DEFAULT_POOL_SIZE);
   }
 
   /**
@@ -108,12 +109,13 @@ public class AdaptiveLogisticRegression implements OnlineLearner, Writable {
    * @param threadCount The number of threads to use for training
    * @param poolSize The number of {@link org.apache.mahout.classifier.sgd.CrossFoldLearner} to use.
    */
-  public AdaptiveLogisticRegression(int numCategories, int numFeatures, PriorFunction prior, int threadCount, int poolSize) {
+  public AdaptiveLogisticRegression(int numCategories, int numFeatures, SGDStrategy strategy, int threadCount, int poolSize) {
     this.numFeatures = numFeatures;
     this.threadCount = threadCount;
     this.poolSize = poolSize;
+    this.strategy = strategy;
     seed = new State<Wrapper, CrossFoldLearner>(new double[2], 10);
-    Wrapper w = new Wrapper(numCategories, numFeatures, prior);
+    Wrapper w = new Wrapper(numCategories, numFeatures, strategy);
     seed.setPayload(w);
 
     Wrapper.setMappings(seed);
@@ -332,10 +334,6 @@ public class AdaptiveLogisticRegression implements OnlineLearner, Writable {
     return seed.getPayload().getLearner().numCategories();
   }
 
-  public PriorFunction getPrior() {
-    return seed.getPayload().getLearner().getPrior();
-  }
-
   public void setBuffer(List<TrainingExample> buffer) {
     this.buffer = buffer;
   }
@@ -389,8 +387,8 @@ public class AdaptiveLogisticRegression implements OnlineLearner, Writable {
     public Wrapper() {
     }
 
-    public Wrapper(int numCategories, int numFeatures, PriorFunction prior) {
-      wrapped = new CrossFoldLearner(5, numCategories, numFeatures, prior);
+    public Wrapper(int numCategories, int numFeatures, SGDStrategy strategy) {
+      wrapped = new CrossFoldLearner(5, numCategories, numFeatures, strategy);
     }
 
     @Override
@@ -402,9 +400,8 @@ public class AdaptiveLogisticRegression implements OnlineLearner, Writable {
 
     @Override
     public void update(double[] params) {
-      int i = 0;
-      wrapped.lambda(params[i++]);
-      wrapped.learningRate(params[i]);
+      wrapped.getStrategy().update(params);
+      wrapped.learningRate(params[1]);
 
       wrapped.stepOffset(1);
       wrapped.alpha(1);

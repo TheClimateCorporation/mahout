@@ -17,18 +17,17 @@
 
 package org.apache.mahout.regression.sgd;
 
-import com.google.common.base.Preconditions;
-import org.apache.mahout.classifier.sgd.SGDStrategy;
-import org.apache.mahout.regression.AbstractVectorLinearPredictor;
-import org.apache.mahout.regression.OnlineLinearPredictorLearner;
 import org.apache.mahout.classifier.sgd.PriorFunction;
+import org.apache.mahout.classifier.sgd.SGDLearner;
+import org.apache.mahout.classifier.sgd.SGDStrategy;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.function.DoubleFunction;
 import org.apache.mahout.math.function.Functions;
-import org.apache.mahout.classifier.sgd.SGDLearner;
+import org.apache.mahout.regression.AbstractVectorLinearPredictor;
+import org.apache.mahout.regression.OnlineLinearPredictorLearner;
 
-import java.util.Iterator;
+import com.google.common.base.Preconditions;
 
 /**
  * Generic definition of a linear predictor function.
@@ -53,8 +52,8 @@ public abstract class AbstractOnlineLinearPredictor extends AbstractVectorLinear
   protected Vector updateCounts;
 
   // weight of the prior on beta
-  private double lambda = 1.0e-5;
-  protected PriorFunction prior;
+  // private double lambda = 1.0e-5;
+  // protected PriorFunction prior;
 
   // can we ignore any further regularization when doing prediction?
   private boolean sealed;
@@ -68,10 +67,11 @@ public abstract class AbstractOnlineLinearPredictor extends AbstractVectorLinear
    * @param lambda New value of lambda, the weighting factor for the prior distribution.
    * @return This, so other configurations can be chained.
    */
-  public AbstractOnlineLinearPredictor lambda(double lambda) {
-    this.lambda = lambda;
-    return this;
-  }
+//  public AbstractOnlineLinearPredictor lambda(double lambda) {
+//    //this.lambda = lambda;
+//	this.strategy.setLambda(lambda);
+//    return this;
+//  }
 
   public double linearCombination(Vector instance) {
     return beta.dot(instance);
@@ -126,7 +126,7 @@ public abstract class AbstractOnlineLinearPredictor extends AbstractVectorLinear
     if (updateSteps == null || isSealed()) {
       return;
     }
-    strategy.applyPrior(this, updateSteps, instance, beta);
+    strategy.regularize(this, updateSteps, instance, beta);
   }
 
   // these two abstract methods are how extensions can modify the basic learning behavior of this object.
@@ -135,16 +135,8 @@ public abstract class AbstractOnlineLinearPredictor extends AbstractVectorLinear
 
   public abstract double currentLearningRate();
 
-  public void setPrior(PriorFunction prior) {
-    this.prior = prior;
-  }
-
   public void setGradient(LinearPredictorGradient gradient) {
     this.gradient = gradient;
-  }
-
-  public PriorFunction getPrior() {
-    return prior;
   }
 
   public Vector getBeta() {
@@ -156,9 +148,10 @@ public abstract class AbstractOnlineLinearPredictor extends AbstractVectorLinear
     beta.set(j, betaIJ);
   }
 
-  public double getLambda() {
-    return lambda;
-  }
+//  public double getLambda() {
+//   // return lambda;
+//	  return strategy.getLambda();
+//  }
 
   public int getStep() {
     return step;
@@ -209,9 +202,10 @@ public abstract class AbstractOnlineLinearPredictor extends AbstractVectorLinear
     });
     return k < 1;
   }
-
-  public PriorFunction prior() {
-    return prior;
+  
+  @Override
+  public SGDStrategy getStrategy() {
+	  return strategy;
   }
 }
 

@@ -58,25 +58,14 @@ public abstract class AbstractOnlineLogisticRegression extends AbstractVectorCla
   protected Vector updateCounts;
 
   // weight of the prior on beta
-  private double lambda = 1.0e-5;
-  protected PriorFunction prior;
+  //private double lambda = 1.0e-5;
+  //protected PriorFunction prior;
 
   // can we ignore any further regularization when doing classification?
   private boolean sealed;
 
   // by default we don't do any fancy training
   private Gradient gradient = new DefaultGradient();
-
-  /**
-   * Chainable configuration option.
-   *
-   * @param lambda New value of lambda, the weighting factor for the prior distribution.
-   * @return This, so other configurations can be chained.
-   */
-  public AbstractOnlineLogisticRegression lambda(double lambda) {
-    this.lambda = lambda;
-    return this;
-  }
 
   /**
    * Computes the inverse link function, by default the logistic link function.
@@ -192,7 +181,7 @@ public abstract class AbstractOnlineLogisticRegression extends AbstractVectorCla
 
     // here we lazily apply the prior to make up for our neglect
     for (int i = 0; i < numCategories - 1; i++) {
-        strategy.applyPrior(this, updateSteps, instance, beta.viewRow(i));
+        strategy.regularize(this, updateSteps, instance, beta.viewRow(i));
     }
   }
 
@@ -202,16 +191,8 @@ public abstract class AbstractOnlineLogisticRegression extends AbstractVectorCla
 
   public abstract double currentLearningRate();
 
-  public void setPrior(PriorFunction prior) {
-    this.prior = prior;
-  }
-
   public void setGradient(Gradient gradient) {
     this.gradient = gradient;
-  }
-
-  public PriorFunction getPrior() {
-    return prior;
   }
 
   public Matrix getBeta() {
@@ -230,10 +211,6 @@ public abstract class AbstractOnlineLogisticRegression extends AbstractVectorCla
 
   public int numFeatures() {
     return beta.numCols();
-  }
-
-  public double getLambda() {
-    return lambda;
   }
 
   public int getStep() {
@@ -289,6 +266,11 @@ public abstract class AbstractOnlineLogisticRegression extends AbstractVectorCla
       }
     });
     return k < 1;
+  }
+  
+  @Override
+  public SGDStrategy getStrategy() {
+	  return strategy;
   }
 
 }
