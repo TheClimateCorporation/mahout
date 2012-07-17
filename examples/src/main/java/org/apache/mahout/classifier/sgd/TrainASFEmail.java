@@ -67,7 +67,7 @@ public final class TrainASFEmail extends AbstractJob {
     int poolSize = Integer.parseInt(getOption("poolSize", "5"));
     Dictionary asfDictionary = new Dictionary();
     AdaptiveLogisticRegression learningAlgorithm =
-        new AdaptiveLogisticRegression(numCats, cardinality, new L1(), threadCount, poolSize);
+        new AdaptiveLogisticRegression(numCats, cardinality, new PriorSGDStrategy(new L1()), threadCount, poolSize);
     learningAlgorithm.setInterval(800);
     learningAlgorithm.setAveragingWindow(500);
 

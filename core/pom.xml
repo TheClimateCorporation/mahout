@@ -23,7 +23,7 @@
   <parent>
     <groupId>org.apache.mahout</groupId>
     <artifactId>mahout</artifactId>
-    <version>0.8-SNAPSHOT</version>
+    <version>0.8-SNAPSHOT-WB</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
@@ -117,7 +117,7 @@
   </build>
 
   <dependencies>
-  
+
     <!-- our modules -->
     <dependency>
       <groupId>${project.groupId}</groupId>
@@ -195,7 +195,7 @@
     </dependency>
 
   </dependencies>
-  
+
   <profiles>
     <profile>
       <id>hadoop-0.20</id>

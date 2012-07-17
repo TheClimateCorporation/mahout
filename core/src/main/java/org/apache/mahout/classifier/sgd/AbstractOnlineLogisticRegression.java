@@ -17,7 +17,6 @@
 
 package org.apache.mahout.classifier.sgd;
 
-import com.google.common.base.Preconditions;
 import org.apache.mahout.classifier.AbstractVectorClassifier;
 import org.apache.mahout.classifier.OnlineLearner;
 import org.apache.mahout.math.DenseVector;
@@ -26,7 +25,7 @@ import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.function.DoubleFunction;
 import org.apache.mahout.math.function.Functions;
 
-import java.util.Iterator;
+import com.google.common.base.Preconditions;
 
 /**
  * Generic definition of a 1 of n logistic regression classifier that returns probabilities in
@@ -56,10 +55,6 @@ public abstract class AbstractOnlineLogisticRegression extends AbstractVectorCla
   // information about how many updates we have had on a location.  This allows per-term
   // annealing a la confidence weighted learning.
   protected Vector updateCounts;
-
-  // weight of the prior on beta
-  //private double lambda = 1.0e-5;
-  //protected PriorFunction prior;
 
   // can we ignore any further regularization when doing classification?
   private boolean sealed;
@@ -149,8 +144,6 @@ public abstract class AbstractOnlineLogisticRegression extends AbstractVectorCla
   @Override
   public void train(long trackingKey, String groupKey, int actual, Vector instance) {
     unseal();
-
-    double learningRate = currentLearningRate();
 
     // push coefficients back to zero based on the prior
     regularize(instance);

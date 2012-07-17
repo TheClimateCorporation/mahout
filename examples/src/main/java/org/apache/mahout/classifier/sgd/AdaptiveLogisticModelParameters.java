@@ -51,7 +51,7 @@ public class AdaptiveLogisticModelParameters extends LogisticModelParameters {
 
     if (alr == null) {
       alr = new AdaptiveLogisticRegression(getMaxTargetCategories(),
-                                           getNumFeatures(), createPrior(prior, priorOption));
+                                           getNumFeatures(), new PriorSGDStrategy(createPrior(prior, priorOption)));
       alr.setInterval(interval);
       alr.setAveragingWindow(averageWindow);
       alr.setThreadCount(threads);

@@ -23,7 +23,6 @@ import java.util.List;
 
 import org.apache.hadoop.io.Writable;
 import org.apache.mahout.classifier.sgd.PolymorphicWritable;
-import org.apache.mahout.classifier.sgd.PriorFunction;
 import org.apache.mahout.classifier.sgd.SGDStrategy;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
@@ -50,7 +49,6 @@ public class CrossFoldRegressionLearner extends AbstractVectorLinearPredictor im
   // lambda, learningRate, perTermOffset, perTermExponent
   private double[] parameters = new double[4];
   private int numFeatures;
-  private double percentCorrect;
   private SGDStrategy strategy;
   private int windowSize = Integer.MAX_VALUE;
 
@@ -68,14 +66,6 @@ public class CrossFoldRegressionLearner extends AbstractVectorLinearPredictor im
   }
 
   // -------- builder-like configuration methods
-
-//  public CrossFoldRegressionLearner lambda(double v) {
-//    for (OnlineLinearPredictor model : models) {
-//      model.getStrategy().setLambda(v);
-//    }
-//    return this;
-//  }
-
   public CrossFoldRegressionLearner learningRate(double x) {
     for (OnlineLinearPredictor model : models) {
       model.learningRate(x);

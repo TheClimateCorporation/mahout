@@ -23,8 +23,6 @@ import java.io.IOException;
 
 import org.apache.hadoop.io.Writable;
 import org.apache.mahout.classifier.sgd.PolymorphicWritable;
-import org.apache.mahout.classifier.sgd.PriorFunction;
-import org.apache.mahout.classifier.sgd.PriorSGDStrategy;
 import org.apache.mahout.classifier.sgd.SGDStrategy;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.VectorWritable;
@@ -80,14 +78,6 @@ public class OnlineLinearPredictor extends AbstractOnlineLinearPredictor impleme
     this.decayFactor = alpha;
     return this;
   }
-
-//  @Override
-//  public OnlineLinearPredictor lambda(double lambda) {
-//    Preconditions.checkArgument(lambda >= 0, "lambda must be non-negative");
-//    // we only over-ride this to provide a more restrictive return type
-//    super.lambda(lambda);
-//    return this;
-//  }
 
   /**
    * Chainable configuration option.

@@ -82,7 +82,6 @@ public class AdaptiveLogisticRegression implements OnlineLearner, Writable {
   private int poolSize = DEFAULT_POOL_SIZE;
   private State<Wrapper, CrossFoldLearner> seed;
   private int numFeatures;
-  private SGDStrategy strategy;
 
   private boolean freezeSurvivors = true;
 
@@ -93,9 +92,9 @@ public class AdaptiveLogisticRegression implements OnlineLearner, Writable {
    * Uses {@link #DEFAULT_THREAD_COUNT} and {@link #DEFAULT_POOL_SIZE}
    * @param numCategories The number of categories (labels) to train on
    * @param numFeatures The number of features used in creating the vectors (i.e. the cardinality of the vector)
-   * @param prior The {@link org.apache.mahout.classifier.sgd.PriorFunction} to use
+   * @param strategy The {@link org.apache.mahout.classifier.sgd.SGDStrategy} to use
    *
-   * @see {@link #AdaptiveLogisticRegression(int, int, org.apache.mahout.classifier.sgd.PriorFunction, int, int)}
+   * @see {@link #AdaptiveLogisticRegression(int, int, org.apache.mahout.classifier.sgd.SGDStrategy, int, int)}
    */
   public AdaptiveLogisticRegression(int numCategories, int numFeatures, SGDStrategy strategy) {
     this(numCategories, numFeatures, strategy, DEFAULT_THREAD_COUNT, DEFAULT_POOL_SIZE);
@@ -113,7 +112,6 @@ public class AdaptiveLogisticRegression implements OnlineLearner, Writable {
     this.numFeatures = numFeatures;
     this.threadCount = threadCount;
     this.poolSize = poolSize;
-    this.strategy = strategy;
     seed = new State<Wrapper, CrossFoldLearner>(new double[2], 10);
     Wrapper w = new Wrapper(numCategories, numFeatures, strategy);
     seed.setPayload(w);

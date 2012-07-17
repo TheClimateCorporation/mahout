@@ -24,8 +24,8 @@ import java.util.Iterator;
 
 import org.apache.mahout.math.Vector;
 
-public class PriorSGDStrategy implements SGDStrategy {
-	
+public class PriorSGDStrategy extends AbstractSGDStrategy implements SGDStrategy {
+
 	private static final int WRITABLE_VERSION = 1;
 	private static final double DEFAULT_LAMBDA = 1.0e-5;
 	private PriorFunction prior;
@@ -36,7 +36,7 @@ public class PriorSGDStrategy implements SGDStrategy {
 		this.prior = new L1();
 		this.lambda = DEFAULT_LAMBDA;
 	}
-	
+
 	public PriorSGDStrategy(PriorFunction prior, double lambda) {
 		this.prior = prior;
 		this.lambda = lambda;
@@ -45,7 +45,7 @@ public class PriorSGDStrategy implements SGDStrategy {
 	public PriorSGDStrategy(PriorFunction prior) {
 		this(prior, DEFAULT_LAMBDA);
 	}
-	
+
 	private PriorSGDStrategy(PriorSGDStrategy other) {
 		this(other.prior, other.lambda);
 	}
@@ -65,27 +65,6 @@ public class PriorSGDStrategy implements SGDStrategy {
 		}
 	}
 
-	public void applyGradient(SGDLearner learner, Vector instance, Vector beta, double gradientBase, Vector updateSteps, Vector updateCounts) {
-		// apply the gradientBase to beta
-		Iterator<Vector.Element> nonZeros = instance.iterateNonZero();
-		while (nonZeros.hasNext()) {
-			Vector.Element updateLocation = nonZeros.next();
-			int j = updateLocation.index();
-
-			double newValue = beta.getQuick(j) + gradientBase * learner.currentLearningRate() * learner.perTermLearningRate(j) * instance.get(j);
-			beta.setQuick(j, newValue);
-		}
-		// remember that these elements got updated
-		Iterator<Vector.Element> i = instance.iterateNonZero();
-		while (i.hasNext()) {
-			Vector.Element element = i.next();
-			int j = element.index();
-			updateSteps.setQuick(j, learner.getStep());
-			updateCounts.setQuick(j, updateCounts.getQuick(j) + 1);
-		}
-		learner.nextStep();
-	}
-
 	public double getLambda() {
 		return lambda;
 	}
@@ -94,24 +73,24 @@ public class PriorSGDStrategy implements SGDStrategy {
 		this.lambda = lambda;
 	}
 
-	  @Override
-	  public void write(DataOutput out) throws IOException {
-	    out.writeInt(WRITABLE_VERSION);
-	    PolymorphicWritable.write(out, prior);
-	    out.writeDouble(lambda);
-	  }
+	@Override
+	public void write(DataOutput out) throws IOException {
+		out.writeInt(WRITABLE_VERSION);
+		PolymorphicWritable.write(out, prior);
+		out.writeDouble(lambda);
+	}
 
-	  @Override
-	  public void readFields(DataInput in) throws IOException {
-	    int version = in.readInt();
-	    if (version == WRITABLE_VERSION) {
-	      prior = PolymorphicWritable.read(in, PriorFunction.class);
-	      lambda = in.readDouble();
-	    } else {
-	      throw new IOException("Incorrect object version, wanted " + WRITABLE_VERSION + " got " + version);
-	    }
-	  }
-	  
+	@Override
+	public void readFields(DataInput in) throws IOException {
+		int version = in.readInt();
+		if (version == WRITABLE_VERSION) {
+			prior = PolymorphicWritable.read(in, PriorFunction.class);
+			lambda = in.readDouble();
+		} else {
+			throw new IOException("Incorrect object version, wanted " + WRITABLE_VERSION + " got " + version);
+		}
+	}
+
 	@Override
 	public SGDStrategy copy() {
 		return new PriorSGDStrategy(this);

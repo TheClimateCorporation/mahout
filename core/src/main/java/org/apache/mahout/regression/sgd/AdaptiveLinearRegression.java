@@ -80,9 +80,6 @@ public class AdaptiveLinearRegression implements OnlineLinearPredictorLearner, W
   private int poolSize = DEFAULT_POOL_SIZE;
   private State<Wrapper, CrossFoldRegressionLearner> seed;
   private int numFeatures;
-  
-  private SGDStrategy strategy;
-
   private boolean freezeSurvivors = true;
 
   public AdaptiveLinearRegression() {
@@ -91,9 +88,9 @@ public class AdaptiveLinearRegression implements OnlineLinearPredictorLearner, W
   /**
    * Uses {@link #DEFAULT_THREAD_COUNT} and {@link #DEFAULT_POOL_SIZE}
    * @param numFeatures The number of features used in creating the vectors (i.e. the cardinality of the vector)
-   * @param prior The {@link org.apache.mahout.classifier.sgd.PriorFunction} to use
+   * @param strategy The {@link org.apache.mahout.classifier.sgd.SGDStrategy} to use
    *
-   * @see {@link #AdaptiveLinearRegression(int, org.apache.mahout.classifier.sgd.PriorFunction, int, int)}
+   * @see {@link #AdaptiveLinearRegression(int, org.apache.mahout.classifier.sgd.SGDStrategy, int, int)}
    */
   public AdaptiveLinearRegression(int numFeatures, SGDStrategy strategy) {
     this(numFeatures, strategy, DEFAULT_THREAD_COUNT, DEFAULT_POOL_SIZE);
@@ -110,12 +107,10 @@ public class AdaptiveLinearRegression implements OnlineLinearPredictorLearner, W
     this.numFeatures = numFeatures;
     this.threadCount = threadCount;
     this.poolSize = poolSize;
-    this.strategy = strategy;
     double[] defaultParams = {1, 0.1};
     seed = new State<Wrapper, CrossFoldRegressionLearner>(defaultParams, 10);
     Wrapper w = new Wrapper(numFeatures, strategy);
     seed.setPayload(w);
-
     w.setMappings(seed);
     seed.setPayload(w);
     setPoolSize(this.poolSize);
