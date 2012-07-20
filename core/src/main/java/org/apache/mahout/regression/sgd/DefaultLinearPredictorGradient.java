@@ -23,7 +23,7 @@ import org.apache.mahout.math.Vector;
 /**
  * Implements the basic regression training law which applies an L2 loss.
  */
-public class DefaultLinerPredictorGradient implements LinearPredictorGradient {
+public class DefaultLinearPredictorGradient implements LinearPredictorGradient {
   /**
    * Provides a default gradient computation useful for least squares regression.
    *

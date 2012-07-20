@@ -17,9 +17,15 @@
 
 package org.apache.mahout.regression.sgd;
 
-import com.google.common.collect.Lists;
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.ExecutionException;
+
 import org.apache.hadoop.io.Writable;
-import org.apache.mahout.classifier.sgd.PriorFunction;
+import org.apache.mahout.classifier.sgd.SGDStrategy;
 import org.apache.mahout.ep.EvolutionaryProcess;
 import org.apache.mahout.ep.Mapping;
 import org.apache.mahout.ep.Payload;
@@ -28,14 +34,8 @@ import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.VectorWritable;
 import org.apache.mahout.math.stats.OnlineMSE;
 import org.apache.mahout.regression.OnlineLinearPredictorLearner;
-import org.codehaus.jackson.sym.NameN;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.util.List;
-import java.util.Locale;
-import java.util.concurrent.ExecutionException;
+import com.google.common.collect.Lists;
 
 /**
  * This is a meta-learner that maintains a pool of ordinary {@link org.apache.mahout.regression.sgd.OnlineLinearPredictor} learners. Each
@@ -80,7 +80,6 @@ public class AdaptiveLinearRegression implements OnlineLinearPredictorLearner, W
   private int poolSize = DEFAULT_POOL_SIZE;
   private State<Wrapper, CrossFoldRegressionLearner> seed;
   private int numFeatures;
-
   private boolean freezeSurvivors = true;
 
   public AdaptiveLinearRegression() {
@@ -89,12 +88,12 @@ public class AdaptiveLinearRegression implements OnlineLinearPredictorLearner, W
   /**
    * Uses {@link #DEFAULT_THREAD_COUNT} and {@link #DEFAULT_POOL_SIZE}
    * @param numFeatures The number of features used in creating the vectors (i.e. the cardinality of the vector)
-   * @param prior The {@link org.apache.mahout.classifier.sgd.PriorFunction} to use
+   * @param strategy The {@link org.apache.mahout.classifier.sgd.SGDStrategy} to use
    *
-   * @see {@link #AdaptiveLinearRegression(int, org.apache.mahout.classifier.sgd.PriorFunction, int, int)}
+   * @see {@link #AdaptiveLinearRegression(int, org.apache.mahout.classifier.sgd.SGDStrategy, int, int)}
    */
-  public AdaptiveLinearRegression(int numFeatures, PriorFunction prior) {
-    this(numFeatures, prior, DEFAULT_THREAD_COUNT, DEFAULT_POOL_SIZE);
+  public AdaptiveLinearRegression(int numFeatures, SGDStrategy strategy) {
+    this(numFeatures, strategy, DEFAULT_THREAD_COUNT, DEFAULT_POOL_SIZE);
   }
 
   /**
@@ -104,15 +103,14 @@ public class AdaptiveLinearRegression implements OnlineLinearPredictorLearner, W
    * @param threadCount The number of threads to use for training
    * @param poolSize The number of {@link org.apache.mahout.classifier.sgd.CrossFoldLearner} to use.
    */
-  public AdaptiveLinearRegression(int numFeatures, PriorFunction prior, int threadCount, int poolSize) {
+  public AdaptiveLinearRegression(int numFeatures, SGDStrategy strategy, int threadCount, int poolSize) {
     this.numFeatures = numFeatures;
     this.threadCount = threadCount;
     this.poolSize = poolSize;
     double[] defaultParams = {1, 0.1};
     seed = new State<Wrapper, CrossFoldRegressionLearner>(defaultParams, 10);
-    Wrapper w = new Wrapper(numFeatures, prior);
+    Wrapper w = new Wrapper(numFeatures, strategy);
     seed.setPayload(w);
-
     w.setMappings(seed);
     seed.setPayload(w);
     setPoolSize(this.poolSize);
@@ -321,10 +319,6 @@ public class AdaptiveLinearRegression implements OnlineLinearPredictorLearner, W
     return maxInterval;
   }
 
-  public PriorFunction getPrior() {
-    return seed.getPayload().getLearner().getPrior();
-  }
-
   public void setBuffer(List<TrainingExample> buffer) {
     this.buffer = buffer;
   }
@@ -386,8 +380,8 @@ public class AdaptiveLinearRegression implements OnlineLinearPredictorLearner, W
     public Wrapper() {
     }
 
-    public Wrapper(int numFeatures, PriorFunction prior) {
-      wrapped = new CrossFoldRegressionLearner(5, numFeatures, prior);
+    public Wrapper(int numFeatures, SGDStrategy strategy) {
+      wrapped = new CrossFoldRegressionLearner(5, numFeatures, strategy);
     }
 
     @Override
@@ -399,10 +393,10 @@ public class AdaptiveLinearRegression implements OnlineLinearPredictorLearner, W
 
     @Override
     public void update(double[] params) {
-      int i = 0;
-      wrapped.lambda(params[i++]);
-      wrapped.learningRate(params[i]);
-
+      for(OnlineLinearPredictor model : wrapped.getModels()) {
+    	  model.getStrategy().update(params);
+      }
+      wrapped.learningRate(params[1]);      
       wrapped.stepOffset(1);
       wrapped.alpha(1);
       wrapped.decayExponent(0);

@@ -20,7 +20,6 @@ package org.apache.mahout.regression;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Matrix;
 import org.apache.mahout.math.Vector;
-import org.apache.mahout.math.stats.OnlineMSE;
 
 /**
  * Defines the interface for regression solutions that take input as a vector.  This is implemented

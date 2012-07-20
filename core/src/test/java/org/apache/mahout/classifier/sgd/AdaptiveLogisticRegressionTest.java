@@ -42,7 +42,7 @@ public final class AdaptiveLogisticRegressionTest extends MahoutTestCase {
       element.set(sign * exp.nextDouble());
     }
 
-    AdaptiveLogisticRegression.Wrapper cl = new AdaptiveLogisticRegression.Wrapper(2, 200, new L1());
+    AdaptiveLogisticRegression.Wrapper cl = new AdaptiveLogisticRegression.Wrapper(2, 200, new PriorSGDStrategy(new L1()));
     cl.update(new double[]{1.0e-5, 1});
 
     for (int i = 0; i < 10000; i++) {
@@ -55,7 +55,7 @@ public final class AdaptiveLogisticRegressionTest extends MahoutTestCase {
     }
     assertEquals(1, cl.getLearner().auc(), 0.1);
 
-    AdaptiveLogisticRegression x = new AdaptiveLogisticRegression(2, 200, new L1());
+    AdaptiveLogisticRegression x = new AdaptiveLogisticRegression(2, 200, new PriorSGDStrategy(new L1()));
     x.setInterval(1000);
 
     for (int i = 0; i < 20000; i++) {
@@ -99,7 +99,7 @@ public final class AdaptiveLogisticRegressionTest extends MahoutTestCase {
     }
 
     // train one copy of a wrapped learner
-    AdaptiveLogisticRegression.Wrapper w = new AdaptiveLogisticRegression.Wrapper(2, 200, new L1());
+    AdaptiveLogisticRegression.Wrapper w = new AdaptiveLogisticRegression.Wrapper(2, 200, new PriorSGDStrategy(new L1()));
     for (int i = 0; i < 3000; i++) {
       AdaptiveLogisticRegression.TrainingExample r = getExample(i, gen, beta);
       w.train(r);
@@ -147,7 +147,7 @@ public final class AdaptiveLogisticRegressionTest extends MahoutTestCase {
 
   @Test
   public void constantStep() {
-    AdaptiveLogisticRegression lr = new AdaptiveLogisticRegression(2, 1000, new L1());
+    AdaptiveLogisticRegression lr = new AdaptiveLogisticRegression(2, 1000, new PriorSGDStrategy(new L1()));
     lr.setInterval(5000);
     assertEquals(20000, lr.nextStep(15000));
     assertEquals(20000, lr.nextStep(15001));
@@ -158,7 +158,7 @@ public final class AdaptiveLogisticRegressionTest extends MahoutTestCase {
 
   @Test
   public void growingStep() {
-    AdaptiveLogisticRegression lr = new AdaptiveLogisticRegression(2, 1000, new L1());
+    AdaptiveLogisticRegression lr = new AdaptiveLogisticRegression(2, 1000, new PriorSGDStrategy(new L1()));
     lr.setInterval(2000, 10000);
 
     // start with minimum step size

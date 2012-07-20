@@ -36,9 +36,8 @@ public final class OnlineLogisticRegressionTest extends OnlineBaseTest {
   public void crossValidation() throws IOException {
     Vector target = readStandardData();
 
-    CrossFoldLearner lr = new CrossFoldLearner(5, 2, 8, new L1())
-            .lambda(1 * 1.0e-3)
-            .learningRate(50);
+    CrossFoldLearner lr = new CrossFoldLearner(5, 2, 8, new PriorSGDStrategy(new L1())).learningRate(50);
+    ((PriorSGDStrategy) (lr.getStrategy())).setLambda(1 * 1.0e-3);
 
 
     train(getInput(), target, lr);
@@ -54,11 +53,11 @@ public final class OnlineLogisticRegressionTest extends OnlineBaseTest {
     Random gen = RandomUtils.getRandom();
 
     Matrix data = readCsv("cancer.csv");
-    CrossFoldLearner lr = new CrossFoldLearner(5, 2, 10, new L1())
+    CrossFoldLearner lr = new CrossFoldLearner(5, 2, 10, new PriorSGDStrategy(new L1()))
             .stepOffset(10)
             .decayExponent(0.7)
-            .lambda(1 * 1.0e-3)
             .learningRate(5);
+    ((PriorSGDStrategy) (lr.getStrategy())).setLambda(1 * 1.0e-3);
     int k = 0;
     int[] ordering = permute(gen, data.numRows());
     for (int epoch = 0; epoch < 100; epoch++) {
@@ -76,7 +75,7 @@ public final class OnlineLogisticRegressionTest extends OnlineBaseTest {
    */
   @Test
   public void testClassify() {
-    OnlineLogisticRegression lr = new OnlineLogisticRegression(3, 2, new L2(1));
+    OnlineLogisticRegression lr = new OnlineLogisticRegression(3, 2, new PriorSGDStrategy(new L2(1)));
     // set up some internal coefficients as if we had learned them
     lr.setBeta(0, 0, -1);
     lr.setBeta(1, 0, -2);
@@ -141,9 +140,8 @@ public final class OnlineLogisticRegressionTest extends OnlineBaseTest {
     // for this example, but should generally be < 1
     // --passes 1 --rate 50 --lambda 0.001 --input sgd-y.csv --features 21 --output model --noBias
     //   --target y --categories 2 --predictors  V2 V3 V4 V5 V6 V7 --types n
-    OnlineLogisticRegression lr = new OnlineLogisticRegression(2, 8, new L1())
-            .lambda(1 * 1.0e-3)
-            .learningRate(50);
+    OnlineLogisticRegression lr = new OnlineLogisticRegression(2, 8, new PriorSGDStrategy(new L1())).learningRate(50);
+    ((PriorSGDStrategy) (lr.getStrategy())).setLambda(1 * 1.0e-3);
 
     train(getInput(), target, lr);
     test(getInput(), target, lr, 0.05, 0.3);

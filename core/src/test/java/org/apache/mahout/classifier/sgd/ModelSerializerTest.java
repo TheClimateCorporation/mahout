@@ -78,7 +78,7 @@ public final class ModelSerializerTest extends MahoutTestCase {
 
   @Test
   public void onlineLogisticRegressionRoundTrip() throws IOException {
-    OnlineLogisticRegression olr = new OnlineLogisticRegression(2, 5, new L1());
+    OnlineLogisticRegression olr = new OnlineLogisticRegression(2, 5, new PriorSGDStrategy(new L1()));
     train(olr, 100);
     OnlineLogisticRegression olr3 = roundTrip(olr, OnlineLogisticRegression.class);
     assertEquals(0, olr.getBeta().minus(olr3.getBeta()).aggregate(Functions.MAX, Functions.IDENTITY), 1.0e-6);
@@ -91,7 +91,7 @@ public final class ModelSerializerTest extends MahoutTestCase {
 
   @Test
   public void crossFoldLearnerRoundTrip() throws IOException {
-    CrossFoldLearner learner = new CrossFoldLearner(5, 2, 5, new L1());
+    CrossFoldLearner learner = new CrossFoldLearner(5, 2, 5, new PriorSGDStrategy(new L1()));
     train(learner, 100);
     CrossFoldLearner olr3 = roundTrip(learner, CrossFoldLearner.class);
     double auc1 = learner.auc();
@@ -111,7 +111,7 @@ public final class ModelSerializerTest extends MahoutTestCase {
 
   @Test
   public void adaptiveLogisticRegressionRoundTrip() throws IOException {
-    AdaptiveLogisticRegression learner = new AdaptiveLogisticRegression(2, 5, new L1());
+    AdaptiveLogisticRegression learner = new AdaptiveLogisticRegression(2, 5, new PriorSGDStrategy(new L1()));
     learner.setInterval(200);
     train(learner, 400);
     AdaptiveLogisticRegression olr3 = roundTrip(learner, AdaptiveLogisticRegression.class);
