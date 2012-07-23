@@ -98,7 +98,7 @@ public final class TrainNewsGroups {
     NewsgroupHelper helper = new NewsgroupHelper();
     helper.getEncoder().setProbes(2);
     AdaptiveLogisticRegression learningAlgorithm =
-        new AdaptiveLogisticRegression(20, NewsgroupHelper.FEATURES, new L1());
+        new AdaptiveLogisticRegression(20, NewsgroupHelper.FEATURES, new PriorSGDStrategy(new L1()));
     learningAlgorithm.setInterval(800);
     learningAlgorithm.setAveragingWindow(500);
 

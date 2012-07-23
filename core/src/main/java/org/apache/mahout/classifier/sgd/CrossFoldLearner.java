@@ -52,7 +52,7 @@ public class CrossFoldLearner extends AbstractVectorClassifier implements Online
   // lambda, learningRate, perTermOffset, perTermExponent
   private double[] parameters = new double[4];
   private int numFeatures;
-  private PriorFunction prior;
+  private SGDStrategy strategy;
   private double percentCorrect;
 
   private int windowSize = Integer.MAX_VALUE;
@@ -60,24 +60,17 @@ public class CrossFoldLearner extends AbstractVectorClassifier implements Online
   public CrossFoldLearner() {
   }
 
-  public CrossFoldLearner(int folds, int numCategories, int numFeatures, PriorFunction prior) {
+  public CrossFoldLearner(int folds, int numCategories, int numFeatures, SGDStrategy strategy) {
     this.numFeatures = numFeatures;
-    this.prior = prior;
+    this.strategy = strategy;
     for (int i = 0; i < folds; i++) {
-      OnlineLogisticRegression model = new OnlineLogisticRegression(numCategories, numFeatures, prior);
+      OnlineLogisticRegression model = new OnlineLogisticRegression(numCategories, numFeatures, strategy);
       model.alpha(1).stepOffset(0).decayExponent(0);
       models.add(model);
     }
   }
 
   // -------- builder-like configuration methods
-
-  public CrossFoldLearner lambda(double v) {
-    for (OnlineLogisticRegression model : models) {
-      model.lambda(v);
-    }
-    return this;
-  }
 
   public CrossFoldLearner learningRate(double x) {
     for (OnlineLogisticRegression model : models) {
@@ -214,12 +207,12 @@ public class CrossFoldLearner extends AbstractVectorClassifier implements Online
   // -------- evolutionary optimization
 
   public CrossFoldLearner copy() {
-    CrossFoldLearner r = new CrossFoldLearner(models.size(), numCategories(), numFeatures, prior);
+    CrossFoldLearner r = new CrossFoldLearner(models.size(), numCategories(), numFeatures, strategy.copy());
     r.models.clear();
     for (OnlineLogisticRegression model : models) {
       model.close();
       OnlineLogisticRegression newModel =
-          new OnlineLogisticRegression(model.numCategories(), model.numFeatures(), model.prior);
+          new OnlineLogisticRegression(model.numCategories(), model.numFeatures(), model.strategy.copy());
       newModel.copyFrom(model);
       r.models.add(newModel);
     }
@@ -279,12 +272,12 @@ public class CrossFoldLearner extends AbstractVectorClassifier implements Online
     auc.setWindowSize(windowSize);
   }
 
-  public PriorFunction getPrior() {
-    return prior;
+  public SGDStrategy getStrategy() {
+	  return strategy;
   }
-
-  public void setPrior(PriorFunction prior) {
-    this.prior = prior;
+  
+  public void setStrategy(SGDStrategy strategy) {
+	  this.strategy = strategy;
   }
 
   @Override
@@ -301,7 +294,7 @@ public class CrossFoldLearner extends AbstractVectorClassifier implements Online
       out.writeDouble(x);
     }
     out.writeInt(numFeatures);
-    PolymorphicWritable.write(out, prior);
+    PolymorphicWritable.write(out, strategy);
     out.writeDouble(percentCorrect);
     out.writeInt(windowSize);
   }
@@ -322,7 +315,7 @@ public class CrossFoldLearner extends AbstractVectorClassifier implements Online
       parameters[i] = in.readDouble();
     }
     numFeatures = in.readInt();
-    prior = PolymorphicWritable.read(in, PriorFunction.class);
+    strategy = PolymorphicWritable.read(in, SGDStrategy.class);
     percentCorrect = in.readDouble();
     windowSize = in.readInt();
   }

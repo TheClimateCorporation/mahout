@@ -51,10 +51,9 @@ public class OnlineLogisticRegression extends AbstractOnlineLogisticRegression i
     // private constructor available for serialization, but not normal use
   }
 
-  public OnlineLogisticRegression(int numCategories, int numFeatures, PriorFunction prior) {
+  public OnlineLogisticRegression(int numCategories, int numFeatures, SGDStrategy strategy) {
     this.numCategories = numCategories;
-    this.prior = prior;
-    this.strategy = new SGDStrategy(prior);
+    this.strategy = strategy;
 
     updateSteps = new DenseVector(numFeatures);
     updateCounts = new DenseVector(numFeatures).assign(perTermAnnealingOffset);
@@ -69,13 +68,6 @@ public class OnlineLogisticRegression extends AbstractOnlineLogisticRegression i
    */
   public OnlineLogisticRegression alpha(double alpha) {
     this.decayFactor = alpha;
-    return this;
-  }
-
-  @Override
-  public OnlineLogisticRegression lambda(double lambda) {
-    // we only over-ride this to provide a more restrictive return type
-    super.lambda(lambda);
     return this;
   }
 
@@ -127,7 +119,7 @@ public class OnlineLogisticRegression extends AbstractOnlineLogisticRegression i
 
   public OnlineLogisticRegression copy() {
     close();
-    OnlineLogisticRegression r = new OnlineLogisticRegression(numCategories(), numFeatures(), prior);
+    OnlineLogisticRegression r = new OnlineLogisticRegression(numCategories(), numFeatures(), strategy.copy());
     r.copyFrom(this);
     return r;
   }
@@ -143,7 +135,7 @@ public class OnlineLogisticRegression extends AbstractOnlineLogisticRegression i
     out.writeInt(perTermAnnealingOffset);
     out.writeInt(numCategories);
     MatrixWritable.writeMatrix(out, beta);
-    PolymorphicWritable.write(out, prior);
+    PolymorphicWritable.write(out, strategy);
     VectorWritable.writeVector(out, updateCounts);
     VectorWritable.writeVector(out, updateSteps);
   }
@@ -160,8 +152,7 @@ public class OnlineLogisticRegression extends AbstractOnlineLogisticRegression i
       perTermAnnealingOffset = in.readInt();
       numCategories = in.readInt();
       beta = MatrixWritable.readMatrix(in);
-      prior = PolymorphicWritable.read(in, PriorFunction.class);
-      strategy = new SGDStrategy(prior);
+      strategy = PolymorphicWritable.read(in, SGDStrategy.class);
       updateCounts = VectorWritable.readVector(in);
       updateSteps = VectorWritable.readVector(in);
     } else {

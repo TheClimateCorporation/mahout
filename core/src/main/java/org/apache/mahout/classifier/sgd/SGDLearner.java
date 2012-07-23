@@ -20,8 +20,8 @@ package org.apache.mahout.classifier.sgd;
 public interface SGDLearner {
   int getStep();
 
-  double getLambda();
-
+  SGDStrategy getStrategy();
+  
   double perTermLearningRate(int j);
 
   double currentLearningRate();
