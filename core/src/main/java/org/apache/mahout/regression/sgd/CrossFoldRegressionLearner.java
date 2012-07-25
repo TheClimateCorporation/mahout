@@ -180,6 +180,14 @@ public class CrossFoldRegressionLearner extends AbstractVectorLinearPredictor im
   public void setRecord(int record) {
     this.record = record;
   }
+  
+  public SGDStrategy getStrategy() {
+	  return strategy;
+  }
+  
+  public void setStrategy(SGDStrategy strategy) {
+	  this.strategy = strategy;
+  }
 
   public List<OnlineLinearPredictor> getModels() {
     return models;
