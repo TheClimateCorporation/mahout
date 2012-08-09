@@ -84,8 +84,8 @@ public abstract class AbstractOnlineLinearPredictor extends AbstractVectorLinear
 		unseal();
 
 		double learningRate = currentLearningRate();
-		Preconditions.checkState(learningRate > 0.0 && learningRate < 1.0 && learningRate != Double.NaN,
-				"learning rate must be in (0,1");
+		Preconditions.checkState(learningRate >= 0.0 && learningRate < 1.0 && learningRate != Double.NaN,
+				"learning rate must be in [0,1)");
 		// push coefficients back to zero based on the prior
 		regularize(instance);
 		

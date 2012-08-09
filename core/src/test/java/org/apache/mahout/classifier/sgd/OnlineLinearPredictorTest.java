@@ -97,5 +97,9 @@ public final class OnlineLinearPredictorTest extends OnlineLinearPredictorBaseTe
 		regression.setBeta(new DenseVector(new double[] {-2.0, -1.0, 5, 3}));
 		train(getInput(), target, regression, 2000);
 		testBetas(getInput(), targetBeta, regression);		
+		
+		
+					
+				
 	}
 }
