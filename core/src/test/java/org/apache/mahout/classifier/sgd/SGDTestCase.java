@@ -74,7 +74,7 @@ public abstract class SGDTestCase extends MahoutTestCase {
      * @return A matrix of the results.
      * @throws java.io.IOException If there is an error reading the data
      */
-    static Matrix readCsv(String resourceName) throws IOException {
+    public static Matrix readCsv(String resourceName) throws IOException {
         Splitter onCommas = Splitter.on(',').trimResults(CharMatcher.anyOf(" \""));
 
         Readable isr = new InputStreamReader(Resources.getResource(resourceName).openStream(), Charsets.UTF_8);
